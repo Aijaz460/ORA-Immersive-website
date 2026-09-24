@@ -222,15 +222,6 @@ export default function Journey() {
           0.3,
         )
         .from(
-          q(".jr__deck"),
-          {
-            scale: 1.08,
-            duration: 2.6,
-            ease: "expo.out",
-          },
-          0,
-        )
-        .from(
           q(".jr__puffw"),
           { autoAlpha: 0, y: 40, duration: 2, ease: "expo.out", stagger: 0.08 },
           0.2,
@@ -423,15 +414,50 @@ export default function Journey() {
       });
 
       // ===== 0 · fall through the clouds =====
-      const SKY = 4.4;
+      // One scene, one camera: the live film sits inside a real opening in the cloud layer from the
+      // first frame. Falling = the film zooming up to full screen around the opening while the
+      // clouds (nearer the camera) rush outward faster. Nothing crossfades, so it never cuts.
+      const SKY = 4.6;
+      const deck = q<HTMLImageElement>(".jr__deck")[0];
+      const HOLE = { x: 0.49, y: 0.653, w: 0.445, h: 0.375 }; // opening in clouds.webp (fractions)
+      const POS = { x: 0.5, y: 0.6 }; // object-position of the deck
+      const hole = () => {
+        const iw = deck.naturalWidth || 2560;
+        const ih = deck.naturalHeight || 1429;
+        const k = Math.max(innerWidth / iw, innerHeight / ih);
+        return {
+          x: (innerWidth - iw * k) * POS.x + HOLE.x * iw * k,
+          y: (innerHeight - ih * k) * POS.y + HOLE.y * ih * k,
+          w: HOLE.w * iw * k,
+          h: HOLE.h * ih * k,
+        };
+      };
+      // film scale at rest: a little larger than the opening, so its edges stay under the clouds
+      const s0 = () => {
+        const b = box();
+        const h = hole();
+        return Math.min(0.9, Math.max((h.w * 1.3) / b.w, (h.h * 1.3) / b.h));
+      };
+      const fall = { k: 0 }; // 0 = at rest in the sky, 1 = film full screen
+      const applyFall = () => {
+        const b = box();
+        const h = hole();
+        const start = s0();
+        const k = start + (1 - start) * fall.k;
+        const z = zoomTo((h.x - b.left) / b.w, (h.y - b.top) / b.h, k);
+        gsap.set(scene, { scale: z.scale, x: z.x, y: z.y, force3D: false });
+        deck.style.transformOrigin = `${h.x}px ${h.y}px`;
+        const c = Math.pow(k / start, 1.8);
+        gsap.set(deck, { scaleX: c, scaleY: c });
+      };
+      applyFall();
+      addEventListener("resize", applyFall);
+      deck.addEventListener("load", applyFall);
       tl.addLabel("sky")
         .to(q(".jr__hero"), { autoAlpha: 0, y: -70, duration: 1.4, ease: "power1.in" }, "sky")
         .to(q(".jr__stats"), { autoAlpha: 0, y: 30, duration: 0.9 }, "sky")
-        .to(
-          q(".jr__deck"),
-          { scale: 3.4, duration: SKY, ease: "power2.in" },
-          "sky",
-        );
+        .to(fall, { k: 1, duration: SKY, ease: "power2.inOut", onUpdate: applyFall }, "sky")
+        .set(q(".jr__deck"), { autoAlpha: 0 }, `sky+=${SKY}`);
       q<HTMLElement>(".jr__puff").forEach((img) => {
         const d = Number(img.dataset.d);
         const w = img.parentElement!;
@@ -445,26 +471,16 @@ export default function Journey() {
             y: () => cy() * innerHeight * 1.6 * d,
             scaleX: 1 + 2.4 * d,
             scaleY: 1 + 2.4 * d,
-            duration: SKY * (0.75 + 0.2 / d),
+            duration: SKY * (0.7 + 0.2 / d),
             ease: "power2.in",
           },
           "sky",
-        ).to(img, { autoAlpha: 0, duration: 0.8 }, `sky+=${SKY * 0.62}`);
+        ).to(img, { autoAlpha: 0, duration: 0.8 }, `sky+=${SKY * 0.6}`);
       });
-      // hand-over without a flat frame: the deck keeps zooming while it dissolves, and the film is
-      // already zooming in underneath it, so the fall never pauses between the clouds and the villa
-      const HAND = 1.5;
-      tl.to(q(".jr__deck"), { autoAlpha: 0, duration: HAND, ease: "power1.inOut" }, `sky+=${SKY - HAND}`)
-        .fromTo(
-          scene,
-          { scale: 1.35 },
-          { scale: 1, duration: HAND + 1.2, ease: "power2.out", force3D: false },
-          `sky+=${SKY - HAND}`,
-        )
-        .set(q(".jr__sky"), { autoAlpha: 0 }, `sky+=${SKY + 0.2}`);
+      tl.set(q(".jr__sky"), { autoAlpha: 0 }, `sky+=${SKY + 0.1}`);
 
       // ===== 1 · the flight (frames 0 → aerialEnd) =====
-      tl.addLabel("fly", `sky+=${SKY - HAND}`)
+      tl.addLabel("fly", `sky+=${SKY * 0.45}`)
         .to(
           state,
           { frame: f(STORY.aerialEnd), duration: 8, ease: "sine.inOut" },
@@ -826,7 +842,10 @@ export default function Journey() {
         // hold the confirmed booking; the section then scrolls away as a whole (no empty frame)
         .to({}, { duration: 1.2 });
 
-      return () => removeEventListener("ora:ready", go);
+      return () => {
+        removeEventListener("ora:ready", go);
+        removeEventListener("resize", applyFall);
+      };
     }, el);
 
     return () => {
@@ -923,8 +942,8 @@ export default function Journey() {
       {/* ---------- opening sky: fall through the clouds into the villa community ---------- */}
       <div className="jr__sky" aria-hidden>
         <picture>
-          <source media="(max-width: 860px)" srcSet="/img/sky/deck-m.webp" />
-          <img className="jr__deck" src="/img/sky/deck.webp" alt="" fetchPriority="high" />
+          <source media="(max-width: 860px)" srcSet="/img/sky/clouds-m.webp" />
+          <img className="jr__deck" src="/img/sky/clouds.webp" alt="" fetchPriority="high" />
         </picture>
         {PUFFS.map((pf) => (
           <span

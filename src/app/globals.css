@@ -2727,9 +2727,8 @@ body {
   height: 100%;
   max-width: none;
   object-fit: cover;
+  /* keep in sync with POS in Journey.tsx: the opening's screen position is computed from it */
   object-position: 50% 60%;
-  /* fall toward the opening in the clouds */
-  transform-origin: 49% 66%;
 }
 .jr__puffw {
   position: absolute;
@@ -2821,9 +2820,6 @@ body {
 @media (max-width: 860px) {
   .jr__hero {
     top: 92px;
-  }
-  .jr__deck {
-    object-position: 49% 62%;
   }
 }
 .jr__hero .jr__title {
