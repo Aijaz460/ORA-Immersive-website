@@ -59,7 +59,7 @@ def bundle(seq: str, stride: int) -> None:
     os.makedirs(out_dir, exist_ok=True)
     index = {"bundles": []}
     for n, group in enumerate(groups):
-        name = f"frames-{n}.bin"
+        name = f"frames-{n}.webp"  # concatenated webp frames (a file type artifacts serve)
         entries, off = [], 0
         with open(os.path.join(out_dir, name), "wb") as fh:
             for i in group:
