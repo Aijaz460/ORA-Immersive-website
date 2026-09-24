@@ -43,33 +43,61 @@ export function createSequence(
         seen.add(i);
         order.push(i);
       }
-  const readyAt = Math.ceil(opts.count / stride) + 1;
+  let readyAt = Math.ceil(opts.count / stride) + 1;
   const decoded = new Uint8Array(opts.count); // 1 once a frame is fetched *and* decoded
   const CONCURRENCY = opts.concurrency ?? 8;
   let next = 0;
+
+  const show = (i: number, img: HTMLImageElement) => {
+    img.decoding = "async";
+    // decode off the main thread before the frame is ever drawn (no sync decode mid-scroll)
+    const done = () => {
+      if (img.naturalWidth) decoded[i] = 1;
+      loaded++;
+      opts.onProgress?.(Math.min(loaded, readyAt), readyAt);
+      if (loaded === readyAt) resolveReady();
+      if (i === current || current < 0) paint(current < 0 ? 0 : current);
+    };
+    img.onload = () => {
+      img.decode().then(done, done);
+    };
+    img.onerror = () => done();
+    frames[i] = img;
+  };
 
   const loadNext = () => {
     if (next >= order.length) return;
     const i = order[next++];
     const img = new Image();
-    img.decoding = "async";
-    // decode off the main thread before the frame is ever drawn (no sync decode mid-scroll)
-    img.onload = () => {
-      img.decode().then(done, done);
-    };
-    img.onerror = () => done();
-    const done = () => {
-      if (img.naturalWidth) decoded[i] = 1;
-      loaded++;
-      opts.onProgress?.(loaded, readyAt);
-      if (loaded === readyAt) resolveReady();
-      if (i === current || current < 0) paint(current < 0 ? 0 : current);
-      loadNext();
-    };
+    show(i, img);
+    img.addEventListener("load", loadNext, { once: true });
+    img.addEventListener("error", loadNext, { once: true });
     img.src = `${opts.path}/${String(i + 1).padStart(3, "0")}.${ext}`;
-    frames[i] = img;
   };
-  for (let k = 0; k < CONCURRENCY; k++) loadNext();
+
+  // Hosts with a file-count limit (the Claude artifact build) ship the frames packed into a few
+  // bundles in the same priority order: bundle 0 is the first pass, so `ready` means the same thing.
+  const loadBundles = async () => {
+    const index: { bundles: { file: string; frames: [number, number, number][] }[] } = await (
+      await fetch(`${opts.path}/index.json`)
+    ).json();
+    readyAtBundle = index.bundles[0].frames.length;
+    readyAt = readyAtBundle;
+    for (const b of index.bundles) {
+      const buf = await (await fetch(`${opts.path}/${b.file}`)).arrayBuffer();
+      for (const [i, off, len] of b.frames) {
+        const img = new Image();
+        show(i, img);
+        img.src = URL.createObjectURL(new Blob([buf.slice(off, off + len)], { type: "image/webp" }));
+      }
+    }
+  };
+  let readyAtBundle = 0;
+  if (process.env.NEXT_PUBLIC_SEQ_BUNDLE === "1") {
+    loadBundles().catch(() => resolveReady());
+  } else {
+    for (let k = 0; k < CONCURRENCY; k++) loadNext();
+  }
 
   function nearestLoaded(i: number) {
     for (let d = 0; d < frames.length; d++) {
