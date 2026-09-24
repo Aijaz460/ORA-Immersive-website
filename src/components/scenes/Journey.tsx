@@ -451,19 +451,20 @@ export default function Journey() {
           "sky",
         ).to(img, { autoAlpha: 0, duration: 0.8 }, `sky+=${SKY * 0.62}`);
       });
-      tl.fromTo(
-        q(".jr__veil"),
-        { autoAlpha: 0 },
-        { autoAlpha: 1, duration: 0.7, ease: "power1.in" },
-        `sky+=${SKY - 0.9}`,
-      )
-        .set(q(".jr__deck, .jr__puffw"), { autoAlpha: 0 }, `sky+=${SKY - 0.2}`)
-        .fromTo(scene, { scale: 1.18 }, { scale: 1, duration: 1.6, ease: "power2.out", force3D: false }, `sky+=${SKY - 0.2}`)
-        .to(q(".jr__veil"), { autoAlpha: 0, duration: 1, ease: "power1.out" }, `sky+=${SKY - 0.1}`)
-        .set(q(".jr__sky"), { autoAlpha: 0 }, `sky+=${SKY + 1}`);
+      // hand-over without a flat frame: the deck keeps zooming while it dissolves, and the film is
+      // already zooming in underneath it, so the fall never pauses between the clouds and the villa
+      const HAND = 1.5;
+      tl.to(q(".jr__deck"), { autoAlpha: 0, duration: HAND, ease: "power1.inOut" }, `sky+=${SKY - HAND}`)
+        .fromTo(
+          scene,
+          { scale: 1.35 },
+          { scale: 1, duration: HAND + 1.2, ease: "power2.out", force3D: false },
+          `sky+=${SKY - HAND}`,
+        )
+        .set(q(".jr__sky"), { autoAlpha: 0 }, `sky+=${SKY + 0.2}`);
 
       // ===== 1 · the flight (frames 0 → aerialEnd) =====
-      tl.addLabel("fly", `sky+=${SKY - 0.2}`)
+      tl.addLabel("fly", `sky+=${SKY - HAND}`)
         .to(
           state,
           { frame: f(STORY.aerialEnd), duration: 8, ease: "sine.inOut" },
@@ -935,7 +936,6 @@ export default function Journey() {
             <img className="jr__puff" data-d={pf.d} src={`/img/sky/puff-${pf.n}.webp`} alt="" decoding="async" />
           </span>
         ))}
-        <span className="jr__veil" />
       </div>
 
       {/* ---------- film captions ---------- */}

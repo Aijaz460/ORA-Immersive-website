@@ -3,95 +3,32 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { MotionPathPlugin } from "gsap/MotionPathPlugin";
 import { prefersReducedMotion } from "@/lib/stage";
 import { Mark } from "../ui/Logo";
 
-gsap.registerPlugin(ScrollTrigger);
+gsap.registerPlugin(ScrollTrigger, MotionPathPlugin);
 
-// Every card replays a real ORA flow with the app's own components (Figma "Components" 27:48165,
-// exported 2×): the states cross-fade in order and a tap ring shows where the user taps.
-// tap = where to tap on that state before moving on, in % of the component (x, y).
-type Step = { src: string; tap?: [number, number]; hold?: number };
-type Flow = { k: string; tint: string; label: string; title: string; body: string; alt: string; steps: Step[] };
+// Every card is a tiny live demo of a real ORA app flow (Figma "Mobile UI Screens"),
+// running on its own loop while it is on screen. Each glass card carries its own app pastel.
 
-const FLOWS: Flow[] = [
-  {
-    k: "ai",
-    tint: "#F3EBDD",
-    label: "Ora assistant",
-    title: "Just tell Ora what's wrong",
-    body: "Describe it in your own words and Ora suggests the right service and extras.",
-    alt: "Ora assistant: pick a request and get suggested services",
-    steps: [{ src: "ai-1", tap: [25, 77] }, { src: "ai-2", hold: 2.4 }],
-  },
-  {
-    k: "book",
-    tint: "#E6EEDC",
-    label: "Booking",
-    title: "Booked in under a minute",
-    body: "Pick an opening, review, confirm with your number. Done.",
-    alt: "Booking flow: choose a time, review, sign in and get confirmation",
-    steps: [
-      { src: "book-1", tap: [72, 66] },
-      { src: "book-2", tap: [72, 81] },
-      { src: "book-3", tap: [72, 80] },
-      { src: "book-4", hold: 2.2 },
-    ],
-  },
-  {
-    k: "otp",
-    tint: "#EAF1F6",
-    label: "Sign in",
-    title: "Your number is your account",
-    body: "No passwords. A six-digit code and you are in.",
-    alt: "Sign in with a one-time code",
-    steps: [
-      { src: "login-0", tap: [50, 68] },
-      { src: "login-1", hold: 0.6 },
-      { src: "login-2", hold: 0.5 },
-      { src: "login-3", tap: [73, 71], hold: 1.2 },
-    ],
-  },
-  {
-    k: "welcome",
-    tint: "#FBEFD6",
-    label: "First visit",
-    title: "Your address, set once",
-    body: "Ora finds your building; add the unit and start booking.",
-    alt: "Onboarding: confirm your address and unit number",
-    steps: [
-      { src: "welcome-1", tap: [50, 59] },
-      { src: "welcome-2", tap: [30, 15] },
-      { src: "welcome-3", tap: [73, 75] },
-      { src: "welcome-4", hold: 2 },
-    ],
-  },
-  {
-    k: "price",
-    tint: "#F7E4E1",
-    label: "Clear pricing",
-    title: "The price before you book",
-    body: "Packages, materials and add-ons, all shown up front.",
-    alt: "Choose a service type, a time and review the price",
-    steps: [
-      { src: "main-1", tap: [30, 30] },
-      { src: "main-2", tap: [22, 51] },
-      { src: "main-3", tap: [72, 94], hold: 1.6 },
-    ],
-  },
-  {
-    k: "res",
-    tint: "#E6EEDC",
-    label: "Reschedule",
-    title: "Plans change. Slots move.",
-    body: "Open your upcoming booking and move it in two taps.",
-    alt: "Reschedule an upcoming booking",
-    steps: [
-      { src: "up-1", tap: [50, 30] },
-      { src: "up-2", tap: [66, 84] },
-      { src: "book-5", hold: 2.2 },
-    ],
-  },
+const QUERIES = [
+  { q: "My kitchen sink is leaking", svc: "Plumbing", opt: "Leak repairs", img: "/img/tools/plumbing.webp", bg: "#C5D9C0" },
+  { q: "The AC is blowing warm air", svc: "AC & Mechanical", opt: "AC service", img: "/img/tools/ac-hammer.webp", bg: "#CBBDE2" },
+  { q: "Ants in the pantry again", svc: "Pest Control", opt: "Ant treatment", img: "/img/tools/pest.webp", bg: "#D5DAF4" },
+];
+const REPORT = ["Old tap removed", "New mixer installed", "Leak test passed", "Work area cleaned"];
+const NOTES = [
+  { t: "Booking confirmed", s: "Fixture installation · Tue 13:00" },
+  { t: "Muhsen is on his way", s: "Arriving in 12 min · Track live" },
+  { t: "Your job report is ready", s: "4 photos · 2 parts used" },
+];
+const DATES = [
+  ["Mon", "3"],
+  ["Tue", "4"],
+  ["Wed", "5"],
+  ["Thu", "6"],
+  ["Fri", "7"],
 ];
 
 export default function Features() {
@@ -164,41 +101,142 @@ export default function Features() {
       });
 
       const loops: gsap.core.Timeline[] = [];
-      q<HTMLElement>(".fc--flow").forEach((card) => {
-        const c = gsap.utils.selector(card);
-        const states = c<HTMLElement>(".uc__s");
-        const ring = c(".uc__tap")[0];
-        const steps = FLOWS.find((f) => f.k === card.dataset.flow)!.steps;
-        const tl = gsap.timeline({ repeat: -1, repeatDelay: 0.6, paused: true });
-        tl.set(states, { autoAlpha: 0, y: 14 }).set(states[0], { autoAlpha: 1, y: 0 }).set(ring, { autoAlpha: 0 });
-        steps.forEach((st, i) => {
-          const el = states[i];
-          if (i) {
-            tl.to(states[i - 1], { autoAlpha: 0, y: -10, scale: 0.985, duration: 0.45, ease: "power2.in" }).fromTo(
-              el,
-              { autoAlpha: 0, y: 16, scale: 1 },
-              { autoAlpha: 1, y: 0, duration: 0.6, ease: "expo.out" },
-              "-=0.15",
-            );
-          }
-          tl.to({}, { duration: st.hold ?? 0.9 });
-          if (st.tap) {
-            const [px, py] = st.tap;
-            tl.set(ring, { left: `${px}%`, top: () => (el.offsetHeight * py) / 100 })
-              .fromTo(ring, { autoAlpha: 0, scale: 1.6 }, { autoAlpha: 1, scale: 1, duration: 0.35, ease: "power2.out" })
-              .to(ring, { scale: 0.72, duration: 0.12, ease: "power2.in" })
-              .to(ring, { scale: 1.25, autoAlpha: 0, duration: 0.35, ease: "power1.out" });
-          }
-        });
-        // back to the first state for a seamless loop
-        tl.to(states[steps.length - 1], { autoAlpha: 0, duration: 0.4 }, "+=0.4").to(states[0], { autoAlpha: 1, y: 0, duration: 0.5 }, "<");
+      const loop = (card: string, build: (tl: gsap.core.Timeline, c: (s: string) => HTMLElement[]) => void) => {
+        const node = q(card)[0];
+        const c = gsap.utils.selector(node);
+        const tl = gsap.timeline({ repeat: -1, repeatDelay: 0.8, paused: true });
+        build(tl, c);
         loops.push(tl);
         ScrollTrigger.create({
-          trigger: card,
-          start: "top 90%",
-          end: "bottom 10%",
+          trigger: node,
+          start: "top 95%",
+          end: "bottom 5%",
           onToggle: (self) => (self.isActive && !reduce ? tl.play() : tl.pause()),
         });
+      };
+
+      // 1 · AI assistant: type a problem, get the right service
+      loop(".fc--ai", (tl, c) => {
+        const input = c("[data-input]")[0];
+        const sug = c(".ai__sug")[0];
+        QUERIES.forEach((item) => {
+          const s = { n: 0 };
+          tl.set(sug, { autoAlpha: 0, y: 16 })
+            .call(() => {
+              (c(".ai__svc")[0] as HTMLElement).textContent = item.svc;
+              (c(".ai__opt")[0] as HTMLElement).textContent = item.opt;
+              (c(".ai__thumb img")[0] as HTMLImageElement).src = item.img;
+              (c(".ai__thumb")[0] as HTMLElement).style.background = item.bg;
+            })
+            .to(s, {
+              n: item.q.length,
+              duration: item.q.length * 0.045,
+              ease: "none",
+              onUpdate: () => (input.textContent = item.q.slice(0, Math.round(s.n))),
+            })
+            .to(c(".ai__think")[0], { autoAlpha: 1, duration: 0.2 })
+            .to(c(".ai__think i"), { y: -4, duration: 0.25, stagger: 0.1, yoyo: true, repeat: 3 })
+            .to(c(".ai__think")[0], { autoAlpha: 0, duration: 0.2 })
+            .to(sug, { autoAlpha: 1, y: 0, duration: 0.6, ease: "expo.out" })
+            .to(c(".ai__book")[0], { scale: 0.92, duration: 0.12, delay: 0.8 })
+            .to(c(".ai__book")[0], { scale: 1, duration: 0.2 })
+            .to([sug], { autoAlpha: 0, y: -10, duration: 0.4, delay: 0.9 })
+            .to(s, { n: 0, duration: 0.4, onUpdate: () => (input.textContent = item.q.slice(0, Math.round(s.n))) }, "<");
+        });
+      });
+
+      // 2 · live tracking: route draws, the van drives, ETA counts down
+      loop(".fc--track", (tl, c) => {
+        const eta = { v: 12 };
+        const etaEl = c("[data-eta]")[0];
+        tl.set(c(".tr__arrived")[0], { autoAlpha: 0, scale: 0.8 })
+          .set(eta, { v: 12 })
+          .fromTo(c(".tr__route")[0], { strokeDashoffset: 600 }, { strokeDashoffset: 0, duration: 1.2, ease: "power2.inOut" })
+          .fromTo(c(".tr__van")[0], { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.2 })
+          .to(c(".tr__van")[0], {
+            duration: 4,
+            ease: "sine.inOut",
+            motionPath: { path: c(".tr__route")[0] as unknown as SVGPathElement, align: c(".tr__route")[0] as unknown as SVGPathElement, alignOrigin: [0.5, 0.5], autoRotate: false },
+          })
+          .to(eta, { v: 0, duration: 4, ease: "sine.inOut", onUpdate: () => (etaEl.textContent = String(Math.round(eta.v))) }, "<")
+          .to(c(".tr__arrived")[0], { autoAlpha: 1, scale: 1, duration: 0.5, ease: "back.out(2)" })
+          .to(c(".tr__home")[0], { scale: 1.25, duration: 0.25, yoyo: true, repeat: 1 }, "<")
+          .to({}, { duration: 1.2 });
+      });
+
+      // 3 · OTP sign-in
+      loop(".fc--otp", (tl, c) => {
+        const boxes = c(".otp__box");
+        tl.set(boxes, { textContent: "" }).set(c(".otp__ok")[0], { autoAlpha: 0, y: 8 }).set(boxes, { borderColor: "rgba(71,21,15,.14)" });
+        "980945".split("").forEach((d, i) => {
+          tl.set(boxes[i], { textContent: d, borderColor: "#AE554C" }, `+=${i ? 0.18 : 0.4}`).from(boxes[i], { scale: 1.3, duration: 0.25 }, "<");
+        });
+        tl.to(boxes, { borderColor: "#ABBD94", backgroundColor: "rgba(171,189,148,.2)", duration: 0.3, stagger: 0.04 }, "+=0.2")
+          .to(c(".otp__ok")[0], { autoAlpha: 1, y: 0, duration: 0.4 })
+          .to({}, { duration: 1.4 })
+          .to(boxes, { backgroundColor: "rgba(255,255,255,.6)", duration: 0.3 });
+      });
+
+      // 4 · reschedule
+      loop(".fc--res", (tl, c) => {
+        const chips = c(".rs__chip");
+        const pill = c(".rs__pill")[0];
+        const at = (i: number) => chips[i].offsetLeft;
+        tl.set(pill, { x: () => at(1) })
+          .set(c(".rs__toast")[0], { autoAlpha: 0, y: 12 })
+          .to(pill, { x: () => at(3), duration: 0.8, ease: "expo.inOut" }, "+=0.8")
+          .to(c(".rs__toast")[0], { autoAlpha: 1, y: 0, duration: 0.5, ease: "expo.out" })
+          .to({}, { duration: 1.6 })
+          .to(c(".rs__toast")[0], { autoAlpha: 0, duration: 0.3 })
+          .to(pill, { x: () => at(1), duration: 0.8, ease: "expo.inOut" });
+      });
+
+      // 5 · notifications stack
+      loop(".fc--note", (tl, c) => {
+        const notes = c(".nt");
+        tl.set(notes, { autoAlpha: 0, y: -40, scale: 1 });
+        notes.forEach((n, i) => {
+          tl.to(n, { autoAlpha: 1, y: 0, duration: 0.6, ease: "back.out(1.5)" }, i ? "+=0.9" : 0.3);
+          if (i) tl.to(notes.slice(0, i), { y: (k) => (i - k) * 64, scale: (k) => 1 - (i - k) * 0.05, autoAlpha: (k) => 1 - (i - k) * 0.3, duration: 0.6, ease: "power3.out" }, "<");
+        });
+        tl.to(notes, { autoAlpha: 0, y: "+=20", duration: 0.5, stagger: 0.05 }, "+=1.6");
+      });
+
+      // 6 · job report
+      loop(".fc--rep", (tl, c) => {
+        const rows = c(".rp__row");
+        tl.set(rows, { autoAlpha: 0.35 }).set(c(".rp__tick"), { scale: 0 }).set(c(".rp__sent")[0], { autoAlpha: 0, y: 10 });
+        rows.forEach((r, i) => {
+          tl.to(r, { autoAlpha: 1, duration: 0.25 }, i ? "+=0.35" : 0.4).to(c(".rp__tick")[i], { scale: 1, duration: 0.35, ease: "back.out(2.5)" }, "<");
+        });
+        tl.from(c(".rp__ph"), { scale: 0.6, autoAlpha: 0, stagger: 0.08, duration: 0.4, ease: "back.out(2)" }, "+=0.2")
+          .to(c(".rp__sent")[0], { autoAlpha: 1, y: 0, duration: 0.4 })
+          .to({}, { duration: 1.5 });
+      });
+
+      // 7 · saved addresses
+      loop(".fc--addr", (tl, c) => {
+        const pills = c(".ad__pill");
+        const pins = c(".ad__pin");
+        [0, 1, 2, 0].forEach((i, k) => {
+          tl.call(() => pills.forEach((p, j) => p.classList.toggle("is-on", j === i)), [], k ? "+=1.1" : 0.2)
+            .to(pins, { autoAlpha: 0.25, scale: 0.7, y: 0, duration: 0.3 }, "<")
+            .fromTo(pins[i], { y: -26, autoAlpha: 0 }, { y: 0, autoAlpha: 1, scale: 1, duration: 0.6, ease: "bounce.out" }, "<");
+        });
+      });
+
+      // 8 · rebook
+      loop(".fc--book", (tl, c) => {
+        const btn = c(".rb__btn")[0];
+        tl.set(btn, { backgroundColor: "#2D2D2D" })
+          .call(() => (btn.querySelector("span")!.textContent = "Book again"))
+          .set(c(".rb__done")[0], { autoAlpha: 0, y: 10 })
+          .to(btn, { scale: 0.93, duration: 0.14 }, "+=1.2")
+          .to(btn, { scale: 1, duration: 0.2 })
+          .to(btn, { backgroundColor: "#4D4721", duration: 0.3 }, "<")
+          .call(() => (btn.querySelector("span")!.textContent = "Booked ✓"))
+          .to(c(".rb__done")[0], { autoAlpha: 1, y: 0, duration: 0.5, ease: "expo.out" })
+          .to({}, { duration: 1.6 });
       });
 
       // ---- pointer tilt + spotlight ----
@@ -255,7 +293,7 @@ export default function Features() {
           {words("in one <em>calm</em> app.")}
         </h2>
         <p className="ft__lead">
-          Every card below is the real Ora app, playing itself. No phone tag, no vague windows, no surprises.
+          Every card below is the real app, running on its own. No phone tag, no vague windows, no surprises.
         </p>
       </div>
 
@@ -288,26 +326,182 @@ export default function Features() {
           </div>
         </article>
 
-        {FLOWS.map((f) => (
-          <article className={`fc fc--flow fc--${f.k}`} data-flow={f.k} key={f.k}>
-            <header>
-              <small>{f.label}</small>
-              <h3>{f.title}</h3>
-            </header>
-            <p className="fc__body">{f.body}</p>
-            <div className="uc" style={{ ["--tint" as string]: f.tint }} role="img" aria-label={f.alt}>
-              <div className="uc__stack">
-                {f.steps.map((st, i) => (
-                  <div className="uc__s" key={st.src + i}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={`/app/ui/${st.src}.webp`} alt="" loading="lazy" decoding="async" />
-                  </div>
-                ))}
-                <span className="uc__tap" aria-hidden />
+        <article className="fc fc--ai" data-cursor="Ask Ora">
+          <header>
+            <small>Ora assistant</small>
+            <h3>Just tell Ora what&apos;s wrong</h3>
+          </header>
+          <div className="ai">
+            <div className="ai__input">
+              <Mark />
+              <span data-input />
+              <i className="caret" />
+            </div>
+            <div className="ai__think" aria-hidden>
+              <i />
+              <i />
+              <i />
+            </div>
+            <div className="ai__sug">
+              <span className="ai__thumb">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img loading="lazy" decoding="async" src="/img/tools/plumbing.webp" alt="" />
+              </span>
+              <span className="ai__txt">
+                <small>Suggested</small>
+                <b className="ai__svc">Plumbing</b>
+                <span className="ai__opt">Leak repairs</span>
+              </span>
+              <span className="ai__book">Book</span>
+            </div>
+          </div>
+        </article>
+
+        <article className="fc fc--track" data-cursor="Live">
+          <header>
+            <small>Live tracking</small>
+            <h3>Watch your technician arrive</h3>
+          </header>
+          <div className="tr">
+            <svg className="tr__map" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden>
+              <rect width="400" height="300" fill="#EFE6D6" />
+              <path d="M0 80 H400 M0 190 H400 M0 260 H400 M70 0 V300 M190 0 V300 M310 0 V300" stroke="#fff" strokeWidth="14" />
+              <path d="M0 130 L400 110 M120 0 L150 300 M250 0 L240 300" stroke="#fff" strokeWidth="6" />
+              <rect x="205" y="200" width="90" height="46" rx="6" fill="#DCE8D6" />
+              <rect x="85" y="95" width="90" height="80" rx="6" fill="#E5DCCB" />
+              <path className="tr__route" d="M40 268 L70 268 L70 190 L190 190 L190 80 L302 80" fill="none" stroke="#AE554C" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="600" />
+            </svg>
+            <span className="tr__van" aria-hidden>
+              <Mark />
+            </span>
+            <span className="tr__home" aria-hidden />
+            <div className="tr__eta">
+              <small>Muhsen · Plumbing</small>
+              <b>
+                <span data-eta>12</span> min
+              </b>
+            </div>
+            <span className="tr__arrived">Arrived ✓</span>
+          </div>
+        </article>
+
+        <article className="fc fc--otp">
+          <header>
+            <small>Sign in</small>
+            <h3>Your number is your account</h3>
+          </header>
+          <div className="otp">
+            <span className="otp__num">+971 50 123 4567</span>
+            <div className="otp__row">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <span className="otp__box" key={i} />
+              ))}
+            </div>
+            <span className="otp__ok">Verified ✓</span>
+          </div>
+        </article>
+
+        <article className="fc fc--res">
+          <header>
+            <small>Reschedule</small>
+            <h3>Plans change. Slots move.</h3>
+          </header>
+          <div className="rs">
+            <div className="rs__row">
+              <span className="rs__pill" aria-hidden />
+              {DATES.map(([d, n]) => (
+                <span className="rs__chip" key={d}>
+                  <small>{d}</small>
+                  <b>{n}</b>
+                </span>
+              ))}
+            </div>
+            <span className="rs__toast">Rescheduled · Thu 6 Nov, 13:00</span>
+            <small className="rs__note">Free up to 12 hours before your slot</small>
+          </div>
+        </article>
+
+        <article className="fc fc--note">
+          <header>
+            <small>Notifications</small>
+            <h3>Every update, the moment it happens</h3>
+          </header>
+          <div className="nts">
+            {NOTES.map((n) => (
+              <div className="nt" key={n.t}>
+                <span className="nt__ic">
+                  <Mark />
+                </span>
+                <span>
+                  <b>{n.t}</b>
+                  <small>{n.s}</small>
+                </span>
+                <em>now</em>
+              </div>
+            ))}
+          </div>
+        </article>
+
+        <article className="fc fc--rep">
+          <header>
+            <small>Job report</small>
+            <h3>A written report after every visit</h3>
+          </header>
+          <div className="rp">
+            {REPORT.map((r) => (
+              <div className="rp__row" key={r}>
+                <span className="rp__tick">✓</span>
+                {r}
+              </div>
+            ))}
+            <div className="rp__photos">
+              {["#C5D9C0", "#FCDDA1", "#AAC9DF", "#E1756B"].map((c) => (
+                <span className="rp__ph" key={c} style={{ background: c }} />
+              ))}
+              <span className="rp__sent">Sent to your inbox ✓</span>
+            </div>
+          </div>
+        </article>
+
+        <article className="fc fc--addr">
+          <header>
+            <small>Saved addresses</small>
+            <h3>Home, villa, office. One tap.</h3>
+          </header>
+          <div className="ad">
+            <div className="ad__pills">
+              <span className="ad__pill is-on">Home</span>
+              <span className="ad__pill">Villa</span>
+              <span className="ad__pill">Office</span>
+            </div>
+            <div className="ad__map">
+              <span className="ad__pin" style={{ left: "22%", top: "40%" }} />
+              <span className="ad__pin" style={{ left: "58%", top: "62%" }} />
+              <span className="ad__pin" style={{ left: "80%", top: "30%" }} />
+            </div>
+          </div>
+        </article>
+
+        <article className="fc fc--book">
+          <header>
+            <small>Rebook</small>
+            <h3>Loved the last visit? Book it again.</h3>
+          </header>
+          <div className="rb">
+            <div className="rb__card">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img loading="lazy" decoding="async" src="/img/tools/cleaning.webp" alt="" />
+              <div>
+                <b>Deep cleaning</b>
+                <small>2 weeks ago · AED 90</small>
               </div>
             </div>
-          </article>
-        ))}
+            <span className="rb__btn">
+              <span>Book again</span>
+            </span>
+            <span className="rb__done">Same team · Tue 11 Nov, 10:00</span>
+          </div>
+        </article>
       </div>
     </section>
   );
