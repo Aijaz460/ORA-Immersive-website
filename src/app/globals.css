@@ -1756,6 +1756,7 @@ html.is-loading body {
   border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.5);
   opacity: 0;
+  visibility: hidden;
 }
 .jr__app-ui {
   position: absolute;
@@ -2966,4 +2967,39 @@ html.on-mark .header .logo__mark {
   0% { transform: scaleY(0); opacity: 1; }
   60% { transform: scaleY(1); opacity: 1; }
   100% { transform: scaleY(1); opacity: 0; }
+}
+
+/* ---------- round 13: WCAG AA contrast from the rendered pixels (text over glass, pastel and photos) ---------- */
+/* chapter/caption accent words were pale yellow from the old dark cards: invisible on white glass */
+.jr__chapter em,
+.jr__cap em {
+  color: var(--accent);
+}
+/* the notifications card used to be dark brown; on its pastel glass the text must be dark */
+.fc--note {
+  color: var(--red-dark);
+}
+.fc--note header small,
+.fc header small {
+  color: #93372d; /* deeper terracotta: ≥ 4.5:1 on every card pastel */
+}
+/* secondary text: enough weight to clear 4.5:1 on light glass */
+.ar__app { opacity: 1; }
+.tr__eta small,
+.otp__num,
+.rs__note,
+.rb__card small,
+.sc__count { opacity: 0.8; }
+.nt small { opacity: 0.82; }
+.nt em { opacity: 0.78; }
+.jr__cap p { color: rgba(71, 21, 15, 0.86); }
+/* the service marquee runs behind the phones instead of over their light screens */
+.dl__marquee { z-index: 1; }
+/* the glass shine sits under the header's content, never over the button */
+.header__bar > * {
+  position: relative;
+  z-index: 1;
+}
+.rp__tick {
+  color: #353013; /* 12px tick on light green: ≥ 4.5:1 */
 }

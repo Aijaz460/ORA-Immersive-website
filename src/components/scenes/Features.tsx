@@ -197,7 +197,7 @@ export default function Features() {
         tl.set(notes, { autoAlpha: 0, y: -40, scale: 1 });
         notes.forEach((n, i) => {
           tl.to(n, { autoAlpha: 1, y: 0, duration: 0.6, ease: "back.out(1.5)" }, i ? "+=0.9" : 0.3);
-          if (i) tl.to(notes.slice(0, i), { y: (k) => (i - k) * 64, scale: (k) => 1 - (i - k) * 0.05, autoAlpha: (k) => 1 - (i - k) * 0.3, duration: 0.6, ease: "power3.out" }, "<");
+          if (i) tl.to(notes.slice(0, i), { y: (k) => (i - k) * 64, scale: (k) => 1 - (i - k) * 0.05, autoAlpha: (k) => 1 - (i - k) * 0.12, duration: 0.6, ease: "power3.out" }, "<");
         });
         tl.to(notes, { autoAlpha: 0, y: "+=20", duration: 0.5, stagger: 0.05 }, "+=1.6");
       });
@@ -205,7 +205,7 @@ export default function Features() {
       // 6 · job report
       loop(".fc--rep", (tl, c) => {
         const rows = c(".rp__row");
-        tl.set(rows, { autoAlpha: 0.35 }).set(c(".rp__tick"), { scale: 0 }).set(c(".rp__sent")[0], { autoAlpha: 0, y: 10 });
+        tl.set(rows, { autoAlpha: 0.72 }).set(c(".rp__tick"), { scale: 0 }).set(c(".rp__sent")[0], { autoAlpha: 0, y: 10 });
         rows.forEach((r, i) => {
           tl.to(r, { autoAlpha: 1, duration: 0.25 }, i ? "+=0.35" : 0.4).to(c(".rp__tick")[i], { scale: 1, duration: 0.35, ease: "back.out(2.5)" }, "<");
         });

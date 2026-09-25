@@ -874,6 +874,8 @@ export default function Journey() {
             duration: 1.8,
             stagger: 0.25,
             ease: "power1.out",
+            // don't paint the start state at load: the rings exist only at the confirmation beat
+            immediateRender: false,
           },
           "done+=0.8",
         )
