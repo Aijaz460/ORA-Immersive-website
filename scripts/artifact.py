@@ -97,7 +97,8 @@ def main() -> None:
 
     # 2 · public assets (frame sequences are bundled separately)
     for d in ("app", "img", "video"):
-        shutil.copytree(os.path.join("public", d), os.path.join(OUT, d))
+        if os.path.isdir(os.path.join("public", d)):
+            shutil.copytree(os.path.join("public", d), os.path.join(OUT, d))
     for seq, stride in SEQS.items():
         bundle(seq, stride)
 

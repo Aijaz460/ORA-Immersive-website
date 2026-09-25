@@ -645,14 +645,16 @@ export default function Journey() {
         .addLabel("app")
         .to(q(".jr__glow"), { autoAlpha: 1, duration: 1 }, "app");
       chapter(0, "app");
-      tl.to(
-        byName("splash-c"),
-        { autoAlpha: 0, scale: 1.08, duration: 0.6 },
-        "app+=0.3",
-      ).fromTo(
+      // the app opens from its logo: Services is revealed by a crisp circle, never a see-through blend
+      tl.fromTo(
         byName("home"),
-        { autoAlpha: 0, scale: 0.94 },
-        { autoAlpha: 1, scale: 1, duration: 0.8, ease: "power3.out" },
+        { autoAlpha: 1, clipPath: "circle(0% at 50% 47%)" },
+        { clipPath: "circle(120% at 50% 47%)", duration: 0.9, ease: "power3.inOut" },
+        "app+=0.3",
+      ).set(byName("splash-c"), { autoAlpha: 0 }, "app+=1.25").fromTo(
+        byName("home"),
+        { scale: 0.97 },
+        { scale: 1, duration: 0.8, ease: "power3.out" },
         "app+=0.3",
       );
       tiles.forEach((t, i) => {
