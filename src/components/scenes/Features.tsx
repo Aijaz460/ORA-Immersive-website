@@ -51,37 +51,6 @@ export default function Features() {
       });
       gsap.from(q(".ft__lead"), { autoAlpha: 0, y: 20, duration: 1, scrollTrigger: { trigger: q(".ft__head")[0], start: "top 70%" } });
 
-      // ---- the 3D technician climbs out of his card and waves (the WebP loop does the greeting) ----
-      const techCard = q(".fc--tech")[0];
-      // Rises with the scroll; once he is fully out he stays out (the trigger retires at the end,
-      // so scrolling back up never pushes him back into the card).
-      gsap
-        .timeline({
-          scrollTrigger: {
-            trigger: techCard,
-            start: "top 85%",
-            end: "top 30%",
-            scrub: reduce ? true : 0.6,
-            onLeave: (self) => {
-              self.animation?.progress(1);
-              self.kill(false);
-            },
-          },
-        })
-        .fromTo(q(".tech3d__avatar"), { yPercent: 62, scale: 0.9 }, { yPercent: 0, scale: 1, ease: "power2.out" })
-        .fromTo(q(".tech3d__halo"), { scale: 0.5, autoAlpha: 0 }, { scale: 1, autoAlpha: 1, ease: "power2.out" }, 0)
-        .from(q(".tech3d__pills span"), { y: 20, autoAlpha: 0, stagger: 0.1, ease: "power2.out" }, 0.3);
-      // gentle parallax on the wrapper, never on the avatar itself (no fight over the same property)
-      gsap.fromTo(
-        q(".tech3d__clip"),
-        { y: 0 },
-        {
-          y: -24,
-          ease: "none",
-          scrollTrigger: { trigger: techCard, start: "top 30%", end: "bottom top", scrub: reduce ? true : 0.6 },
-        },
-      );
-
       // ---- cards rise in with depth ----
       q<HTMLElement>(".fc").forEach((card, i) => {
         gsap.from(card, {
@@ -298,34 +267,6 @@ export default function Features() {
       </div>
 
       <div className="ft__grid">
-        {/* 3D Ora technician (Higgsfield render + Kling animation, keyed to transparent WebP) */}
-        <article className="fc fc--tech" data-cursor="Hello!">
-          <div className="tech3d__copy">
-            <header>
-              <small>Your Ora technician</small>
-              <h3>
-                Friendly, uniformed and <em>on time</em>, every visit.
-              </h3>
-            </header>
-            <p>
-              Background-checked, trained in-house and on Ora&apos;s payroll. He arrives with the right tools, a fixed
-              price and a report before he leaves.
-            </p>
-            <div className="tech3d__pills">
-              <span>Background-checked</span>
-              <span>4.9★ rated</span>
-              <span>30-day guarantee</span>
-            </div>
-          </div>
-          <div className="tech3d__stage" aria-hidden>
-            <span className="tech3d__halo" />
-            <div className="tech3d__clip">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className="tech3d__avatar" src="/img/technician-avatar.webp" alt="" loading="lazy" decoding="async" width={560} height={1028} />
-            </div>
-          </div>
-        </article>
-
         <article className="fc fc--ai" data-cursor="Ask Ora">
           <header>
             <small>Ora assistant</small>

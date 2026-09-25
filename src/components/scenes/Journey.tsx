@@ -27,10 +27,32 @@ const SCREENS = [
   "home",
   "plumbing-open",
   "plumbing-picked",
+  "date-base",
   "date",
   "review",
+  "confirmed-base",
   "confirmed",
 ] as const;
+
+// Glass cards of the date and confirmation screens (Figma, 2× crops) in app px: they lift off the
+// screen in 3D and settle exactly onto the full screen, which then takes over pixel for pixel.
+const POP = {
+  plumbing: { x: 19, y: 449, w: 374, h: 122 }, // Services list card 5 with the list at y −300
+  date: { x: 16, y: 456, w: 380, h: 412 },
+  confirmed: { x: 16, y: 234, w: 380, h: 644 },
+};
+
+// the technician card sits 60px behind the device (perspective 1600px): this scale keeps it exactly
+// in register with the in-phone crop
+const TECH_Z = 1660 / 1600;
+
+// Brand confetti for the confirmation burst: angle (deg), distance (× phone height), colour.
+const CONFETTI = Array.from({ length: 26 }, (_, i) => ({
+  a: (i / 26) * 360 + (i % 3) * 7,
+  r: 0.42 + ((i * 37) % 23) / 60,
+  c: ["#47150F", "#FCDDA1", "#ABBD94", "#E9A23B", "#FDF4E2", "#C7DEEF"][i % 6],
+  s: 0.6 + ((i * 13) % 7) / 10,
+}));
 
 // "Review your order" (Figma 20:33994): exact card crops, laid out in the glass window of the
 // base screen (app px; window = x 16…396, y 267…718, under the fixed title and above the CTA).
@@ -140,6 +162,12 @@ const CHAPTERS = [
     title: ["Booked in", "<em>three</em> taps."],
     body: "Your reference number arrives instantly. Live updates follow until the job is done.",
   },
+  {
+    k: "07",
+    eyebrow: "On the way",
+    title: ["Accepted.", "<em>On his</em> way."],
+    body: "Your technician accepts in seconds and rides over with the right tools. Follow him live to your door.",
+  },
 ];
 
 export default function Journey() {
@@ -167,7 +195,40 @@ export default function Journey() {
     seq.ready.then(() => {
       dispatchEvent(new Event("ora:hero-ready"));
     });
-    const onResize = () => seq.resize();
+    // Late-story clips (Higgsfield): the technician's smile and folded arms, scrubbed in both the card
+    // and the in-phone crop; the 3D technician accepting the job and riding off (keyed, transparent).
+    // They load once the viewer is into the story so they never compete with the opening frames.
+    const clip = { stride: 4, concurrency: 3, lazy: true };
+    const techSeq = createSequence(q<HTMLCanvasElement>(".jr__techcv--card")[0], {
+      ...clip,
+      path: "/seq/tech",
+      count: 61,
+      sourceWidth: 1100,
+      focusY: 0,
+      mirrors: [q<HTMLCanvasElement>(".jr__techcv--phone")[0]],
+    });
+    const acceptSeq = createSequence(q<HTMLCanvasElement>(".jr__avcv")[0], {
+      ...clip,
+      path: "/seq/accept",
+      count: 61,
+      sourceWidth: 540,
+      alpha: true,
+      fit: "contain",
+      focusY: 1,
+    });
+    const rideSeq = createSequence(q<HTMLCanvasElement>(".jr__ridecv")[0], {
+      ...clip,
+      path: "/seq/ride",
+      count: 61,
+      sourceWidth: 720,
+      alpha: true,
+      fit: "contain",
+      focusY: 1,
+    });
+    const clips = [techSeq, acceptSeq, rideSeq];
+    const loadClips = () => clips.forEach((c) => c.load());
+    const clipTimer = setTimeout(loadClips, 12000); // fallback if the viewer lingers at the top
+    const onResize = () => [seq, ...clips].forEach((s) => s.resize());
     addEventListener("resize", onResize);
 
     // the 3D mark (three.js) loads on demand; the stage paints brand red until it is ready
@@ -212,13 +273,14 @@ export default function Journey() {
       const splashB = q(".jr__fs--b")[0];
       const listInner = q(".jr__list-inner")[0];
       const cardsIn = q<HTMLElement>(".jr__card");
-      const state = { frame: 0, count: 0 };
+      const state = { frame: 0, count: 0, tech: 0, accept: 0, ride: 0 };
 
       // ---------- intro once the preloader lifts: the 3D Ora mark holds the first screen ----------
       const introTl = gsap
         .timeline({ paused: true })
         .call(() => logo?.intro())
-        .from(q(".jr__logocue"), { autoAlpha: 0, y: 16, duration: 1.2, ease: "expo.out" }, 0.6)
+        // children only: the scroll timeline owns the cue itself, so a fast scroll during the intro can't revive it
+        .from(q(".jr__logocue > *"), { autoAlpha: 0, y: 16, duration: 1.2, ease: "expo.out" }, 0.6)
         .from(
           q(".jr__puffw"),
           { autoAlpha: 0, y: 40, duration: 2, ease: "expo.out", stagger: 0.08 },
@@ -285,29 +347,6 @@ export default function Journey() {
           .addLabel(label)
           .to(ring, { autoAlpha: 0, scale: 0.7, duration: 0.25 });
       };
-      // iOS-style push between two exact screens
-      const push = (
-        from: HTMLElement,
-        to: HTMLElement,
-        pos?: string | number,
-        dur = 0.9,
-      ) =>
-        tl
-          .fromTo(
-            to,
-            { xPercent: 100, autoAlpha: 1 },
-            { xPercent: 0, duration: dur, ease: "power3.inOut" },
-            pos,
-          )
-          .to(
-            from,
-            {
-              xPercent: -28,
-              duration: dur,
-              ease: "power3.inOut",
-            },
-            "<",
-          );
       const fade = (
         from: HTMLElement,
         to: HTMLElement,
@@ -335,6 +374,7 @@ export default function Journey() {
         "#FCDDA1",
         "#C7DEEF", // review: the app's own Cleaning blue
         "#ABBD94",
+        "#FDF4E2", // on the way: back to the warm beige of the home
       ];
       const chapterBg = q(".jr__chapterbg")[0];
       const appUi = q(".jr__app-ui")[0];
@@ -406,7 +446,9 @@ export default function Journey() {
         clipPath: "inset(12.3% 76.8% 79.8% 5.9% round 22%)",
       });
 
-      const units = 57;
+      // scroll length follows the story itself: every timeline unit gets the same stretch of scroll
+      // (measured once the timeline is built, then the triggers refresh)
+      let units = 70;
       const tl = gsap.timeline({
         defaults: { ease: "none" },
         scrollTrigger: {
@@ -414,7 +456,9 @@ export default function Journey() {
           start: "top top",
           end: () => `+=${innerHeight * units * UNIT_VH}`,
           pin: true,
-          scrub: reduce ? true : 0.35, // Lenis already eases the scroll; keep scrub lag tiny so it never feels "stuck"
+          anticipatePin: 1,
+          // a soft catch-up on top of Lenis: the camera glides to where you scrolled instead of snapping
+          scrub: reduce ? true : 0.8,
           invalidateOnRefresh: true,
           onUpdate: (self) =>
             gsap.set(q(".jr__progress i"), { scaleX: self.progress }),
@@ -422,6 +466,10 @@ export default function Journey() {
         onUpdate: () => {
           lastScrub = performance.now();
           seq.draw(state.frame);
+          if (tl.time() > (tl.labels.leak ?? 1e9)) loadClips();
+          techSeq.draw(state.tech);
+          acceptSeq.draw(state.accept);
+          rideSeq.draw(state.ride);
         },
       });
 
@@ -679,6 +727,8 @@ export default function Journey() {
         )
         .to(phoneWrap, { autoAlpha: 1, duration: 0.5 }, "dive+=1.8")
         .set(canvas, { autoAlpha: 0 }, "dive+=2.2")
+        // the film's own phone screen sits right behind the app phone: gone before the device ever turns
+        .set(filmScreen, { autoAlpha: 0 }, "dive+=2.2")
         .to(q(".jr__app-ui"), { autoAlpha: 1, duration: 0.6 }, "dive+=2.1")
 
         // ===== 6 · the app, one frame, the UI changes =====
@@ -740,7 +790,23 @@ export default function Journey() {
           "app+=4.6",
         );
 
-      // Plumbing
+      // ---------- 3D device choreography ----------
+      const phone = q<HTMLElement>(".jr__phone .phone")[0];
+      const pick = q(".jr__pick")[0];
+      const pickCheck = q(".jr__pickcheck")[0];
+      const dim = q(".jr__dim")[0];
+      const popDate = q(".jr__popcard--date")[0];
+      const popDone = q(".jr__popcard--done")[0];
+      // 3D offsets live in GSAP (it folds CSS `translate` into its own transform and would drop them):
+      // the pick badge floats above the card, the seal in front of the glass, the technician card a
+      // little behind the device (scale compensates) so the two never intersect when they turn.
+      gsap.set(pickCheck, { z: 140 });
+      gsap.set(q(".jr__seal"), { xPercent: -50, yPercent: -50, z: 90 });
+      gsap.set(techCard, { z: -60, scale: TECH_Z });
+      const insetOf = (r: { x: number; y: number; w: number; h: number }, round: number) =>
+        `inset(${r.y}px ${APP_W - r.x - r.w}px ${APP_H - r.y - r.h}px ${r.x}px round ${round}px)`;
+
+      // ===== Plumbing: the card lifts off the list toward you (selected), then opens into its screen =====
       tl.addLabel("plumb", "app+=5.8");
       tapAt(TAPS.plumbing, "tapPlumb", "plumb");
       tl.to(
@@ -754,35 +820,92 @@ export default function Journey() {
           ease: "power2.in",
         },
         "tapPlumb",
-      );
-      fade(byName("home"), byName("plumbing-open"), "tapPlumb+=0.1", 0.7, 60);
-      chapter(1, "tapPlumb+=0.1");
-      tapAt(TAPS.fixture, "tapFix", "tapPlumb+=1.3");
+      )
+        .set(pick, { autoAlpha: 1 }, "tapPlumb")
+        .to(dim, { autoAlpha: 1, duration: 0.5, ease: "power2.out" }, "tapPlumb")
+        .fromTo(
+          pick,
+          { z: 0, y: 0, scale: 1, rotateX: 0 },
+          { z: 120, y: -16, scale: 1.1, rotateX: -10, duration: 0.8, ease: "back.out(1.5)", immediateRender: false },
+          "tapPlumb",
+        )
+        .to(phone, { rotateY: -12, rotateX: 5, duration: 1.3, ease: "sine.inOut" }, "tapPlumb")
+        .fromTo(
+          pickCheck,
+          { autoAlpha: 0, scale: 0 },
+          { autoAlpha: 1, scale: 1, duration: 0.45, ease: "back.out(2.2)", immediateRender: false },
+          "tapPlumb+=0.35",
+        )
+        .fromTo(
+          q(".jr__pickcheck path"),
+          { strokeDashoffset: 30 },
+          { strokeDashoffset: 0, duration: 0.35, ease: "power2.out" },
+          "tapPlumb+=0.55",
+        )
+        .addLabel("openPlumb", "tapPlumb+=1.6")
+        .to(pick, { z: 0, y: 0, scale: 1, rotateX: 0, duration: 0.5, ease: "power2.inOut" }, "openPlumb")
+        .to(pickCheck, { autoAlpha: 0, scale: 0.6, duration: 0.3 }, "openPlumb")
+        .to(phone, { rotateY: 0, rotateX: 0, duration: 1.1, ease: "power2.inOut" }, "openPlumb")
+        // the Plumbing screen grows out of the selected card (crisp clip, never a see-through blend)
+        .set(byName("plumbing-open"), { autoAlpha: 1 }, "openPlumb+=0.45")
+        .fromTo(
+          byName("plumbing-open"),
+          { clipPath: insetOf(POP.plumbing, 20) },
+          { clipPath: "inset(0px 0px 0px 0px round 0px)", duration: 0.9, ease: "expo.inOut", immediateRender: false },
+          "openPlumb+=0.45",
+        )
+        .to(pick, { autoAlpha: 0, duration: 0.25 }, "openPlumb+=0.55")
+        .set([byName("home"), dim], { autoAlpha: 0 }, "openPlumb+=1.4");
+      chapter(1, "openPlumb+=0.3");
+      tapAt(TAPS.fixture, "tapFix", "openPlumb+=1.9");
       fade(byName("plumbing-open"), byName("plumbing-picked"), "tapFix", 0.3);
 
-      // Date
+      // ===== Date: the booking card flies in from in front of the glass and lands on the screen =====
       tl.addLabel("date", "tapFix+=0.9");
-      push(byName("plumbing-picked"), byName("date"), "date");
+      fade(byName("plumbing-picked"), byName("date-base"), "date", 0.45);
       chapter(2, "date+=0.2");
-      tapAt(TAPS.select, "tapSelect", "date+=1.6");
+      tl.to(phone, { rotateY: 10, rotateX: 4, duration: 1.3, ease: "sine.inOut" }, "date")
+        .fromTo(
+          popDate,
+          { autoAlpha: 0, z: 460, y: 190, rotateX: 42, scale: 0.92 },
+          { autoAlpha: 1, z: 0, y: 0, rotateX: 0, scale: 1, duration: 1.3, ease: "expo.out", immediateRender: false },
+          "date+=0.25",
+        )
+        // landed: the full screen takes over pixel for pixel
+        .set(byName("date"), { autoAlpha: 1 }, "date+=1.6")
+        .set(popDate, { autoAlpha: 0 }, "date+=1.6")
+        .set(byName("date-base"), { autoAlpha: 0 }, "date+=1.7")
+        .to(phone, { rotateY: 0, rotateX: 0, duration: 1, ease: "sine.inOut" }, "date+=1.4");
+      tapAt(TAPS.slot, "tapSlot", "date+=1.9");
+      tapAt(TAPS.select, "tapSelect", "tapSlot+=0.4");
 
-      // Technician: the screen becomes a window onto him, with the framed still behind the phone.
-      // No cut-out, no zoom — one face, fitted inside the phone.
+      // ===== Technician: the device flips on its edge and turns back as a window onto him =====
       tl.addLabel("tech", "tapSelect+=0.6");
-      chapter(3, "tech");
-      push(byName("date"), techPhoto as HTMLElement, "tech");
-      tl.fromTo(
-        techCard,
-        { autoAlpha: 0, scale: 0.72 },
-        { autoAlpha: 1, scale: 1, duration: 1.2, ease: "expo.out" },
-        "tech+=0.5",
-      );
+      chapter(3, "tech+=0.3");
+      tl.to(phone, { rotateY: 90, duration: 0.55, ease: "power2.in" }, "tech")
+        .set(techPhoto, { autoAlpha: 1 }, "tech+=0.55")
+        .set(byName("date"), { autoAlpha: 0 }, "tech+=0.55")
+        .fromTo(
+          phone,
+          { rotateY: -90 },
+          { rotateY: 0, duration: 0.85, ease: "power3.out", immediateRender: false },
+          "tech+=0.55",
+        )
+        .fromTo(
+          techCard,
+          { autoAlpha: 0, scale: 0.72 * TECH_Z, rotateY: -10 },
+          // on phones the card would be wider than the screen (cut edges): the device alone is the frame
+          { autoAlpha: () => (isMobile() ? 0 : 1), scale: TECH_Z, rotateY: 0, duration: 1.2, ease: "expo.out" },
+          "tech+=0.9",
+        )
+        // he looks up, smiles, then folds his arms (Higgsfield clip, same shot and background)
+        .to(state, { tech: 1, duration: 3.4, ease: "none" }, "tech+=1.1");
       techCards.forEach((c, i) =>
         tl.fromTo(
           c,
           { autoAlpha: 0, y: 70, z: -120 },
           { autoAlpha: 1, y: 0, z: 0, duration: 0.9, ease: "expo.out" },
-          `tech+=${1.2 + i * 0.15}`,
+          `tech+=${1.6 + i * 0.18}`,
         ),
       );
       tl.to(
@@ -799,72 +922,124 @@ export default function Journey() {
                 ).toFixed(Number(n.dataset.dec || 0))),
             ),
         },
-        "tech+=1.4",
+        "tech+=1.8",
       ).to(
         techCards,
         {
           y: (i, t) => -36 * Number((t as HTMLElement).dataset.d || 1),
-          duration: 1.6,
+          duration: 2,
         },
-        "tech+=2.4",
+        "tech+=2.8",
       );
 
-      // Review
-      tl.addLabel("review", "tech+=4");
+      // ===== Review: the photo lifts away, the order cards unfold in 3D, the choices pop =====
+      tl.addLabel("review", "tech+=4.9");
       chapter(4, "review");
       tl.to(
         techCards,
         { autoAlpha: 0, y: "-=30", duration: 0.5, stagger: 0.03 },
         "review",
       )
-        .to(
-          techCard,
-          { autoAlpha: 0, scale: 0.8, duration: 0.6 },
-          "review",
+        .to(techCard, { autoAlpha: 0, scale: 0.8 * TECH_Z, rotateY: 8, duration: 0.7 }, "review")
+        .set(byName("review"), { autoAlpha: 1 }, "review")
+        .fromTo(
+          byName("review"),
+          { scale: 0.9, transformOrigin: "50% 60%" },
+          { scale: 1, duration: 1, ease: "power3.out", immediateRender: false },
+          "review+=0.2",
         )
-        .to(
-          techPhoto,
-          { autoAlpha: 0, duration: 0.3 },
-          "review+=1.1",
-        )
-        .to(
-          q(".jr__phone .phone"),
-          { rotateY: 8, duration: 1.4, ease: "sine.inOut" },
-          "review",
-        );
-      push(byName("date"), byName("review"), "review+=0.2");
-      // the order cards settle into the glass one by one, then the panel scrolls like the real app
+        .to(techPhoto, { yPercent: -100, duration: 0.8, ease: "power3.inOut" }, "review+=0.1")
+        .set(techPhoto, { autoAlpha: 0 }, "review+=0.95")
+        .to(phone, { rotateY: 8, rotateX: 3, duration: 1.4, ease: "sine.inOut" }, "review");
       tl.fromTo(
         rvCards,
-        { y: 46, scale: 0.94, autoAlpha: 0 },
-        { y: 0, scale: 1, autoAlpha: 1, duration: 0.7, ease: "expo.out", stagger: 0.09 },
+        { autoAlpha: 0, rotateX: -75, z: -140, y: 60, transformPerspective: 900, transformOrigin: "50% 0%" },
+        { autoAlpha: 1, rotateX: 0, z: 0, y: 0, duration: 0.9, ease: "expo.out", stagger: 0.1 },
         "review+=0.7",
-      ).fromTo(
+      );
+      const popCard = (k: number, at: string) =>
+        tl
+          .to(
+            rvCards[k],
+            {
+              scale: 1.08,
+              z: 30,
+              filter: "drop-shadow(0px 14px 18px rgba(71,21,15,0.28))",
+              duration: 0.3,
+              ease: "power2.out",
+            },
+            at,
+          )
+          .to(
+            rvCards[k],
+            {
+              scale: 1,
+              z: 0,
+              filter: "drop-shadow(0px 0px 0px rgba(71,21,15,0))",
+              duration: 0.4,
+              ease: "power2.inOut",
+            },
+            ">",
+          );
+      // the selections the customer made: service, day, slot…
+      [0, 1, 2].forEach((k, i) => popCard(k, `review+=${2 + i * 0.28}`));
+      tl.fromTo(
         q(".jr__rv-inner"),
         { y: 0 },
         { y: -RV_SCROLL, duration: 1.5, ease: "power2.inOut" },
-        "review+=1.9",
+        "review+=3.1",
       );
-      tapAt(TAPS.confirm, "tapConfirm", "review+=3.6");
+      // …then address and the special request once they scroll into view
+      popCard(4, "review+=4.5");
+      popCard(7, "review+=4.78");
+      tapAt(TAPS.confirm, "tapConfirm", "review+=5.4");
 
-      // Confirmed
+      // ===== Confirmed: the card lands in 3D, a seal and brand confetti burst around the device =====
       tl.addLabel("done", "tapConfirm+=0.3");
       chapter(5, "done");
-      tl.to(
-          q(".jr__phone .phone"),
-          { rotateY: 0, duration: 1, ease: "power3.inOut" },
-          "done",
+      const confetti = q<HTMLElement>(".jr__confetti i");
+      tl.to(phone, { rotateY: 0, rotateX: 0, duration: 1, ease: "power3.inOut" }, "done")
+        .fromTo(
+          byName("confirmed-base"),
+          { autoAlpha: 0 },
+          { autoAlpha: 1, duration: 0.5, ease: "power2.inOut" },
+          "done+=0.1",
         )
         .fromTo(
-          byName("confirmed"),
-          { autoAlpha: 1, clipPath: "circle(0% at 70% 90%)" },
-          {
-            clipPath: "circle(150% at 70% 90%)",
-            duration: 1,
-            ease: "power3.inOut",
-          },
-          "done+=0.3",
+          popDone,
+          { autoAlpha: 0, z: 520, y: 150, rotateX: -34, scale: 0.84 },
+          { autoAlpha: 1, z: 0, y: 0, rotateX: 0, scale: 1, duration: 1.3, ease: "expo.out", immediateRender: false },
+          "done+=0.35",
         )
+        .set(byName("confirmed"), { autoAlpha: 1 }, "done+=1.7")
+        .set(popDone, { autoAlpha: 0 }, "done+=1.7")
+        .fromTo(
+          q(".jr__seal"),
+          { autoAlpha: 0, scale: 0.2, z: 290 },
+          { autoAlpha: 1, scale: 1, z: 90, duration: 0.7, ease: "back.out(1.8)", immediateRender: false },
+          "done+=1.1",
+        )
+        .fromTo(
+          q(".jr__seal path"),
+          { strokeDashoffset: 60 },
+          { strokeDashoffset: 0, duration: 0.5, ease: "power2.out" },
+          "done+=1.45",
+        )
+        .fromTo(
+          confetti,
+          { x: 0, y: 0, scale: 0, rotate: 0, autoAlpha: 1 },
+          {
+            x: (i) => Math.cos((CONFETTI[i].a * Math.PI) / 180) * CONFETTI[i].r * glassH(),
+            y: (i) => Math.sin((CONFETTI[i].a * Math.PI) / 180) * CONFETTI[i].r * glassH() * 0.8,
+            scale: (i) => CONFETTI[i].s,
+            rotate: (i) => (i % 2 ? 1 : -1) * (160 + i * 23),
+            duration: 1.6,
+            ease: "expo.out",
+            immediateRender: false,
+          },
+          "done+=1.2",
+        )
+        .to(confetti, { autoAlpha: 0, y: "+=40", duration: 0.7, ease: "power1.in" }, "done+=2.3")
         .fromTo(
           q(".jr__pulse"),
           { scale: 0.5, autoAlpha: 0.7 },
@@ -877,10 +1052,78 @@ export default function Journey() {
             // don't paint the start state at load: the rings exist only at the confirmation beat
             immediateRender: false,
           },
-          "done+=0.8",
+          "done+=1.2",
         )
-        // hold the confirmed booking; the section then scrolls away as a whole (no empty frame)
-        .to({}, { duration: 1.2 });
+        .to(q(".jr__seal"), { autoAlpha: 0, scale: 0.7, y: -40, duration: 0.5, ease: "power2.in" }, "done+=2.7");
+
+      // ===== On the way: the 3D technician gets the job, accepts, and rides off with his tools =====
+      tl.addLabel("accept", "done+=3.3");
+      chapter(6, "accept");
+      const av = q(".jr__av")[0];
+      const notif = q(".jr__notif")[0];
+      const ride = q<HTMLElement>(".jr__ride")[0];
+      const AV = 3.6; // scroll units for the accept clip
+      gsap.set(ride, { xPercent: -50, yPercent: -50 });
+      if (isMobile()) gsap.set(av, { xPercent: -50 });
+      tl.to(
+        phoneWrap,
+        {
+          x: () => (isMobile() ? 0 : -innerWidth * 0.07),
+          scale: () => (isMobile() ? 0.8 : 0.86),
+          autoAlpha: () => (isMobile() ? 0 : 1),
+          duration: 1.2,
+          ease: "power3.inOut",
+        },
+        "accept",
+      )
+        .to(phone, { rotateY: 14, duration: 1.2, ease: "power3.inOut" }, "accept")
+        .fromTo(
+          av,
+          { autoAlpha: 0, x: 80, scale: 0.94 },
+          { autoAlpha: 1, x: 0, scale: 1, duration: 1, ease: "expo.out" },
+          "accept+=0.4",
+        )
+        .to(state, { accept: 1, duration: AV, ease: "none" }, "accept+=0.6")
+        // the job notification pops from his phone (fully in before the clip's own pill appears)
+        .fromTo(
+          notif,
+          { autoAlpha: 0, scale: 0.6, y: 24 },
+          { autoAlpha: 1, scale: 1, y: 0, duration: 0.2, ease: "back.out(2)" },
+          `accept+=${0.6 + AV * 0.58}`,
+        )
+        .to(q(".jr__notif b"), { scale: 0.9, duration: 0.12 }, `accept+=${0.7 + AV}`)
+        .to(q(".jr__notif b"), { scale: 1, duration: 0.2 }, ">")
+        .to(q(".jr__notif .is-idle"), { autoAlpha: 0, duration: 0.15 }, `accept+=${0.8 + AV}`)
+        .fromTo(q(".jr__notif .is-done"), { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.2 }, `accept+=${0.85 + AV}`)
+        .to(q(".jr__notif b"), { backgroundColor: "#2f5a26", duration: 0.3 }, `accept+=${0.8 + AV}`);
+
+      tl.addLabel("ride", `accept+=${1.6 + AV}`);
+      tl.to(av, { autoAlpha: 0, scale: 0.92, duration: 0.5, ease: "power2.in" }, "ride")
+        .to(notif, { autoAlpha: 0, y: -30, duration: 0.4, ease: "power2.in" }, "ride+=0.3")
+        .to(phoneWrap, { autoAlpha: 0, y: 40, duration: 0.8, ease: "power2.in" }, "ride")
+        .fromTo(
+          ride,
+          // enters large from the right, rides away up the frame into the distance
+          { autoAlpha: 1, x: () => innerWidth * 0.5 + ride.offsetWidth * 0.5, y: () => innerHeight * 0.08, scale: 1.08 },
+          {
+            // ends small, up the road and clear of the chapter card, fading into the haze
+            x: () => -innerWidth * (isMobile() ? 0 : 0.06),
+            y: () => -innerHeight * (isMobile() ? 0.02 : 0.12),
+            scale: 0.42,
+            duration: 5.2,
+            ease: "power1.out",
+            immediateRender: false,
+          },
+          "ride+=0.2",
+        )
+        .to(ride, { autoAlpha: 0, duration: 1.4, ease: "power1.in" }, "ride+=4")
+        .to(state, { ride: 1, duration: 5.2, ease: "none" }, "ride+=0.2")
+        .to({}, { duration: 0.3 });
+
+      units = tl.duration();
+      ScrollTrigger.refresh();
+      // audit hook: continuity/contrast scripts seek to story beats by label
+      (window as unknown as { __oraJourney?: gsap.core.Timeline }).__oraJourney = tl;
 
       // Idle water: paused on the leak close-up, ping-pong the film's own last leak frames so the
       // water keeps running. Same shot, same framing — nothing is layered on top.
@@ -897,6 +1140,7 @@ export default function Journey() {
       gsap.ticker.add(idle);
 
       return () => {
+        clearTimeout(clipTimer);
         removeEventListener("ora:ready", go);
         removeEventListener("resize", applyFall);
         gsap.ticker.remove(idle);
@@ -1067,16 +1311,64 @@ export default function Journey() {
         <span className="jr__pulse" aria-hidden />
         <span className="jr__pulse" aria-hidden />
 
-        {/* photo card behind the phone (same still, same scale as the in-phone photo) */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img fetchPriority="low" decoding="async"
-          className="jr__techcard"
-          src="/img/tech-card.webp"
-          alt=""
-          aria-hidden
-        />
+        {/* photo card behind the phone (same shot, same scale as the in-phone photo); the still is the
+            poster, the canvas plays his smile and folded arms over it */}
+        <div className="jr__techcard" aria-hidden>
+          <canvas className="jr__techcv jr__techcv--card" />
+        </div>
 
-        <Phone>
+        {/* confirmation: seal and brand confetti around the device */}
+        <span className="jr__confetti" aria-hidden>
+          {CONFETTI.map((c, i) => (
+            <i key={i} style={{ background: c.c, borderRadius: i % 3 ? 2 : 999 }} />
+          ))}
+        </span>
+
+        <Phone
+          pop={
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                className="jr__pick"
+                src="/app/svc-card-5.webp"
+                alt=""
+                decoding="async"
+                style={{ left: POP.plumbing.x, top: POP.plumbing.y, width: POP.plumbing.w }}
+              />
+              <span
+                className="jr__pickcheck"
+                style={{ left: POP.plumbing.x + POP.plumbing.w - 22, top: POP.plumbing.y - 14 }}
+              >
+                <svg viewBox="0 0 24 24" aria-hidden>
+                  <path d="M6 12.5l4 4 8-9" pathLength={30} />
+                </svg>
+              </span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                className="jr__popcard jr__popcard--date"
+                src="/app/date-card.webp"
+                alt=""
+                decoding="async"
+                fetchPriority="low"
+                style={{ left: POP.date.x, top: POP.date.y, width: POP.date.w, height: POP.date.h }}
+              />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                className="jr__popcard jr__popcard--done"
+                src="/app/confirmed-card.webp"
+                alt=""
+                decoding="async"
+                fetchPriority="low"
+                style={{
+                  left: POP.confirmed.x,
+                  top: POP.confirmed.y,
+                  width: POP.confirmed.w,
+                  height: POP.confirmed.h,
+                }}
+              />
+            </>
+          }
+        >
           {SCREENS.map((s) =>
             s === "home" ? (
               // Services home: Figma background + the nine exact service cards as a live list
@@ -1097,6 +1389,7 @@ export default function Journey() {
                     ))}
                   </div>
                 </div>
+                <span className="jr__dim" aria-hidden />
               </div>
             ) : s === "review" ? (
               // Review your order: Figma base + the order cards, live inside the glass panel
@@ -1123,7 +1416,9 @@ export default function Journey() {
               <img fetchPriority="low" decoding="async" key={s} className="jr__scr" src={`/app/${s}.webp`} alt="" />
             ),
           )}
-          <div className="jr__techphoto" />
+          <div className="jr__techphoto">
+            <canvas className="jr__techcv jr__techcv--phone" />
+          </div>
           <span className="jr__ring" aria-hidden />
         </Phone>
 
@@ -1141,6 +1436,12 @@ export default function Journey() {
             <span>{t.name}</span>
           </div>
         ))}
+
+        <span className="jr__seal" aria-hidden>
+          <svg viewBox="0 0 48 48">
+            <path d="M14 25l7 7 14-15" pathLength={60} />
+          </svg>
+        </span>
 
         <div className="jr__box">
           <div
@@ -1187,6 +1488,24 @@ export default function Journey() {
 
       </div>
 
+      {/* ---------- the 3D technician: gets the job, accepts, rides off ---------- */}
+      <div className="jr__av" aria-hidden>
+        <canvas className="jr__avcv" />
+        <div className="jr__notif">
+          <span className="jr__notif-icon">
+            <Mark />
+          </span>
+          <span className="jr__notif-text">
+            <small>Ora · New job</small>
+            <strong>Plumbing · Fixture installation</strong>
+            <small>Tue 4 Nov, 13:00 to 15:00</small>
+          </span>
+          <b>
+            <span className="is-idle">Accept</span>
+            <span className="is-done">Accepted ✓</span>
+          </b>
+        </div>
+      </div>
       <div className="jr__app-ui">
         <div className="jr__chapterbg glass" aria-hidden />
         {CHAPTERS.map((c) => (
@@ -1205,6 +1524,12 @@ export default function Journey() {
             <i key={c.k} />
           ))}
         </div>
+      </div>
+
+      {/* he rides past in front of everything: the foreground of the last shot */}
+      <div className="jr__ride" aria-hidden>
+        <span className="jr__ride-shadow" />
+        <canvas className="jr__ridecv" />
       </div>
 
       <div className="jr__progress" aria-hidden>

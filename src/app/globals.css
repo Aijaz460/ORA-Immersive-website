@@ -502,7 +502,6 @@ html.is-loading body {
   grid-template-columns: repeat(4, 1fr);
   grid-auto-rows: minmax(250px, auto);
   grid-template-areas:
-    "tech tech tech tech"
     "ai ai track track"
     "otp res track track"
     "note rep rep book"
@@ -1000,7 +999,6 @@ html.is-loading body {
   .ft__grid {
     grid-template-columns: repeat(2, 1fr);
     grid-template-areas:
-      "tech tech"
       "ai ai"
       "track track"
       "track track"
@@ -1013,7 +1011,7 @@ html.is-loading body {
 @media (max-width: 640px) {
   .ft__grid {
     grid-template-columns: 1fr;
-    grid-template-areas: "tech" "ai" "track" "otp" "res" "note" "rep" "addr" "book";
+    grid-template-areas: "ai" "track" "otp" "res" "note" "rep" "addr" "book";
   }
   .tr {
     min-height: 280px;
@@ -3002,4 +3000,269 @@ html.on-mark .header .logo__mark {
 }
 .rp__tick {
   color: #353013; /* 12px tick on light green: ≥ 4.5:1 */
+}
+
+/* ---------- round 14: 3D device, cards that lift off the glass, confirmation burst, the technician on his way ---------- */
+.phone__depth {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  transform-style: preserve-3d;
+  pointer-events: none;
+}
+.phone__depth i {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(145deg, #55555a, #18181a 45%, #303033);
+}
+.jr__phone > .phone {
+  transform-style: preserve-3d;
+}
+.phone__pop {
+  position: absolute;
+  left: calc(11px * var(--s));
+  top: calc(11px * var(--s));
+  width: 412px;
+  height: 910px;
+  transform: scale(var(--s));
+  transform-origin: 0 0;
+  transform-style: preserve-3d;
+  pointer-events: none;
+}
+.jr__pick,
+.jr__popcard {
+  position: absolute;
+  max-width: none;
+  opacity: 0;
+  visibility: hidden;
+  will-change: transform;
+}
+.jr__pick {
+  height: auto;
+  border-radius: 22px;
+  box-shadow:
+    0 30px 50px -18px rgba(71, 21, 15, 0.45),
+    0 0 0 2px rgba(252, 221, 161, 0.9);
+}
+.jr__popcard {
+  border-radius: 24px;
+  box-shadow: 0 40px 70px -24px rgba(40, 16, 8, 0.45);
+}
+.jr__pickcheck {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #47150f;
+  box-shadow: 0 10px 22px -6px rgba(71, 21, 15, 0.55);
+  opacity: 0;
+  visibility: hidden;
+}
+.jr__pickcheck svg,
+.jr__seal svg {
+  width: 62%;
+  height: 62%;
+  fill: none;
+  stroke: #fcdda1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.jr__pickcheck path {
+  stroke-width: 3;
+  stroke-dasharray: 30;
+}
+.jr__dim {
+  position: absolute;
+  inset: 0;
+  background: rgba(40, 16, 8, 0.34);
+  opacity: 0;
+  visibility: hidden;
+}
+/* the technician: poster still under a canvas that plays the clip; the phone shows its centre slice */
+div.jr__techcard {
+  background: url("/img/tech-card.webp") 50% 0 / cover no-repeat;
+  overflow: hidden;
+}
+.jr__techphoto {
+  overflow: hidden;
+}
+.jr__techcv {
+  position: absolute;
+  top: 0;
+  display: block;
+}
+.jr__techcv--card {
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+.jr__techcv--phone {
+  left: calc((412px - 412px * 2.1657) / 2);
+  width: calc(412px * 2.1657);
+  height: 910px;
+}
+.jr__seal {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: calc(150px * var(--s) + 40px);
+  height: calc(150px * var(--s) + 40px);
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 28%, #7a3226, #47150f 72%);
+  box-shadow:
+    0 30px 60px -18px rgba(71, 21, 15, 0.6),
+    inset 0 0 0 4px rgba(252, 221, 161, 0.4);
+  opacity: 0;
+  visibility: hidden;
+}
+.jr__seal path {
+  stroke-width: 4.5;
+  stroke-dasharray: 60;
+}
+.jr__confetti {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translateZ(70px);
+  transform-style: preserve-3d;
+  pointer-events: none;
+}
+.jr__confetti i {
+  position: absolute;
+  left: -8px;
+  top: -5px;
+  width: 16px;
+  height: 10px;
+  opacity: 0;
+  visibility: hidden;
+}
+/* 3D technician (Higgsfield, keyed): stands beside the device, then rides across the frame */
+.jr__av {
+  position: absolute;
+  right: 5vw;
+  bottom: 1vh;
+  height: 84vh;
+  aspect-ratio: 9 / 16;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.jr__avcv,
+.jr__ridecv {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.jr__notif {
+  position: absolute;
+  left: 47%;
+  top: 20%;
+  width: 66%;
+  min-height: 11.5%;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 8px 10px;
+  padding: 11px 12px 12px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.94);
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  backdrop-filter: blur(14px) saturate(1.3);
+  box-shadow:
+    0 24px 44px -18px rgba(71, 21, 15, 0.45),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.8);
+  color: #2a1410;
+  font-size: clamp(11px, 0.95vw, 14px);
+  line-height: 1.25;
+  opacity: 0;
+  visibility: hidden;
+}
+.jr__notif-icon {
+  width: 2.4em;
+  height: 2.4em;
+  display: grid;
+  place-items: center;
+  border-radius: 0.7em;
+  background: #47150f;
+  color: #fcdda1;
+}
+.jr__notif-icon svg {
+  width: 60%;
+  height: 60%;
+}
+.jr__notif-text {
+  display: grid;
+  min-width: 0;
+}
+.jr__notif-text small {
+  font-size: 0.85em;
+  color: #5c3a30;
+}
+.jr__notif-text strong {
+  font-weight: 600;
+}
+.jr__notif-text > * {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.jr__notif b {
+  grid-column: 1 / -1;
+  display: grid;
+  padding: 0.5em 0.9em;
+  border-radius: 999px;
+  background: #47150f;
+  color: #fdf4e2;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.jr__notif b > span {
+  grid-area: 1 / 1;
+  text-align: center;
+}
+.jr__notif .is-done {
+  opacity: 0;
+  visibility: hidden;
+}
+.jr__ride {
+  position: absolute;
+  left: 50%;
+  top: 60%;
+  width: min(66vh, 78vw);
+  aspect-ratio: 1;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.jr__ride-shadow {
+  position: absolute;
+  left: 10%;
+  right: 12%;
+  bottom: 3%;
+  height: 8%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(71, 21, 15, 0.3), transparent);
+}
+@media (max-width: 860px) {
+  .jr__av {
+    right: auto;
+    left: 50%;
+    height: 60vh;
+  }
+  .jr__notif {
+    left: 24%;
+    width: 84%;
+    gap: 7px;
+    padding: 8px 9px;
+    border-radius: 14px;
+  }
+  .jr__ride {
+    top: 66%;
+  }
 }

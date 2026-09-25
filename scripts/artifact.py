@@ -20,7 +20,7 @@ import subprocess
 
 OUT = "artifact"
 ASSET_DIRS = ("app", "img", "seq", "video")
-SEQS = {"seq/story": 8, "seq/story-m": 16}  # sequence path → first-pass stride (see Journey.tsx)
+SEQS = {"seq/story": 8, "seq/story-m": 16, "seq/tech": 4, "seq/accept": 4, "seq/ride": 4}  # sequence path → first-pass stride (see Journey.tsx)
 BUNDLE_FRAMES = 64
 
 FONT_FACES = "\n".join(

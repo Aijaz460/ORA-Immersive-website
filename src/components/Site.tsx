@@ -25,7 +25,7 @@ export default function Site() {
     ScrollTrigger.addEventListener("refreshInit", applyPhoneScale);
 
     // ---------- smooth scroll ----------
-    const lenis = reduce ? null : new Lenis({ lerp: 0.1, wheelMultiplier: 1, touchMultiplier: 1.5, smoothWheel: true });
+    const lenis = reduce ? null : new Lenis({ lerp: 0.075, wheelMultiplier: 0.9, touchMultiplier: 1.4, smoothWheel: true, syncTouch: false });
     const raf = (t: number) => lenis?.raf(t * 1000);
     if (lenis) {
       lenis.on("scroll", ScrollTrigger.update);

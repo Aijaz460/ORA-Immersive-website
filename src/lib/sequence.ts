@@ -6,6 +6,8 @@ export type Sequence = {
   draw: (progress: number) => void;
   resize: () => void;
   ready: Promise<void>;
+  /** start fetching (only needed with `lazy`) */
+  load: () => void;
 };
 
 export function createSequence(
@@ -20,9 +22,21 @@ export function createSequence(
     /** first-pass stride: every Nth frame must be in before `ready` (8 desktop, 16 on phones) */
     stride?: number;
     concurrency?: number;
+    /** transparent frames (keyed characters): clear before each paint */
+    alpha?: boolean;
+    /** "contain" keeps the whole frame visible (characters); default "cover" */
+    fit?: "cover" | "contain";
+    /** more canvases painted with the same frame (e.g. the in-phone crop of the technician card) */
+    mirrors?: HTMLCanvasElement[];
+    /** don't fetch until load() is called */
+    lazy?: boolean;
   },
 ): Sequence {
-  const ctx = canvas.getContext("2d", { alpha: false })!;
+  const alpha = !!opts.alpha;
+  const targets = [canvas, ...(opts.mirrors ?? [])].map((c) => ({
+    c,
+    ctx: c.getContext("2d", { alpha })!,
+  }));
   const SOURCE_W = opts.sourceWidth ?? 1920;
   const ext = opts.ext ?? "webp";
   const focusY = opts.focusY ?? 0.35;
@@ -93,11 +107,17 @@ export function createSequence(
     }
   };
   let readyAtBundle = 0;
-  if (process.env.NEXT_PUBLIC_SEQ_BUNDLE === "1") {
-    loadBundles().catch(() => resolveReady());
-  } else {
-    for (let k = 0; k < CONCURRENCY; k++) loadNext();
-  }
+  let started = false;
+  const load = () => {
+    if (started) return;
+    started = true;
+    if (process.env.NEXT_PUBLIC_SEQ_BUNDLE === "1") {
+      loadBundles().catch(() => resolveReady());
+    } else {
+      for (let k = 0; k < CONCURRENCY; k++) loadNext();
+    }
+  };
+  if (!opts.lazy) load();
 
   function nearestLoaded(i: number) {
     for (let d = 0; d < frames.length; d++) {
@@ -109,15 +129,20 @@ export function createSequence(
 
   function paint(i: number) {
     const img = nearestLoaded(i);
-    if (!img || !canvas.width) return;
-    const cw = canvas.width;
-    const ch = canvas.height;
-    const scale = Math.max(cw / img.naturalWidth, ch / img.naturalHeight);
-    const w = img.naturalWidth * scale;
-    const h = img.naturalHeight * scale;
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(img, (cw - w) / 2, (ch - h) * focusY, w, h);
+    if (!img) return;
+    for (const { c, ctx } of targets) {
+      if (!c.width) continue;
+      const cw = c.width;
+      const ch = c.height;
+      const fit = opts.fit === "contain" ? Math.min : Math.max;
+      const scale = fit(cw / img.naturalWidth, ch / img.naturalHeight);
+      const w = img.naturalWidth * scale;
+      const h = img.naturalHeight * scale;
+      if (alpha) ctx.clearRect(0, 0, cw, ch);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(img, (cw - w) / 2, (ch - h) * focusY, w, h);
+    }
   }
 
   function resize() {
@@ -126,9 +151,14 @@ export function createSequence(
     // …but no higher than ~1.25× the source either: past that there is no detail to gain, only
     // pixels to push (the phone canvas is wider than the screen, so dpr alone overshoots badly).
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const k = Math.max(1, Math.min(dpr, (SOURCE_W * 1.25) / Math.max(1, canvas.clientWidth)));
-    canvas.width = Math.round(canvas.clientWidth * k);
-    canvas.height = Math.round(canvas.clientHeight * k);
+    for (const { c } of targets) {
+      // offsetWidth ignores transforms (the phone screen is scaled by --s); layout size is what we paint
+      const cwCss = c.offsetWidth || c.clientWidth;
+      const chCss = c.offsetHeight || c.clientHeight;
+      const k = Math.max(1, Math.min(dpr, (SOURCE_W * 1.25) / Math.max(1, cwCss)));
+      c.width = Math.round(cwCss * k);
+      c.height = Math.round(chCss * k);
+    }
     paint(current < 0 ? 0 : current);
   }
 
@@ -140,5 +170,5 @@ export function createSequence(
   }
 
   resize();
-  return { draw, resize, ready };
+  return { draw, resize, ready, load };
 }
