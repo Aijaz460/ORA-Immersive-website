@@ -165,13 +165,6 @@ export default function Journey() {
     });
     seq.ready.then(() => {
       dispatchEvent(new Event("ora:hero-ready"));
-      // the water close-up is needed a few scrolls in: fetch it once the film can scrub
-      const v = q<HTMLVideoElement>(".jr__water")[0];
-      const warm = () => {
-        v.preload = "auto";
-      };
-      if ("requestIdleCallback" in window) requestIdleCallback(warm, { timeout: 2500 });
-      else setTimeout(warm, 1200);
     });
     const onResize = () => seq.resize();
     addEventListener("resize", onResize);
@@ -191,7 +184,7 @@ export default function Journey() {
       const techPhoto = q(".jr__techphoto")[0];
       const techCards = q<HTMLElement>(".jr__qcard");
       const rvCards = q<HTMLElement>(".jr__rv-card");
-      const water = q<HTMLVideoElement>(".jr__water")[0];
+      let lastScrub = 0;
       const tapFrame = q(".jr__tapframe")[0];
       const finger = q(".jr__finger")[0];
       const iosIcon = q(".jr__fs--icon")[0];
@@ -338,23 +331,40 @@ export default function Journey() {
         "#C7DEEF", // review: the app's own Cleaning blue
         "#ABBD94",
       ];
+      const chapterBg = q(".jr__chapterbg")[0];
+      const appUi = q(".jr__app-ui")[0];
+      // one glass card for the whole app act: it resizes to each chapter while the text swaps
+      const rectOf = (el: HTMLElement) => {
+        const r = el.getBoundingClientRect();
+        const c = appUi.getBoundingClientRect();
+        const y = Number(gsap.getProperty(el, "y")) || 0;
+        return { left: r.left - c.left, top: r.top - c.top - y, width: r.width, height: r.height };
+      };
       const chapter = (i: number, pos?: string | number) => {
         tl.to(
           q(".jr__tint")[0],
           { backgroundColor: TINT[i], duration: 1, ease: "sine.inOut" },
           pos,
         );
+        const geo = {
+          left: () => rectOf(chapters[i]).left,
+          top: () => rectOf(chapters[i]).top,
+          width: () => rectOf(chapters[i]).width,
+          height: () => rectOf(chapters[i]).height,
+        };
+        if (i === 0) tl.fromTo(chapterBg, { autoAlpha: 0, ...geo }, { autoAlpha: 1, duration: 0.6 }, pos);
+        else tl.to(chapterBg, { ...geo, duration: 0.7, ease: "power3.inOut" }, pos);
         if (i > 0)
           tl.to(
             chapters[i - 1],
-            { autoAlpha: 0, y: -30, duration: 0.45, ease: "power2.in" },
+            { autoAlpha: 0, y: -16, duration: 0.3, ease: "power2.in" },
             pos,
           );
         tl.fromTo(
           chapters[i],
-          { autoAlpha: 0, y: 40 },
-          { autoAlpha: 1, y: 0, duration: 0.6, ease: "power3.out" },
-          i > 0 ? ">-0.05" : pos,
+          { autoAlpha: 0, y: 16 },
+          { autoAlpha: 1, y: 0, duration: 0.5, ease: "power3.out" },
+          i > 0 ? ">" : pos,
         ).call(() =>
           q(".jr__dots i").forEach((d, k) =>
             d.classList.toggle("is-on", k === i),
@@ -405,11 +415,8 @@ export default function Journey() {
             gsap.set(q(".jr__progress i"), { scaleX: self.progress }),
         },
         onUpdate: () => {
+          lastScrub = performance.now();
           seq.draw(state.frame);
-          // keep the leak loop running whenever it is on screen (autoplay can be deferred by the browser)
-          const shown = Number(gsap.getProperty(water, "opacity")) > 0.01;
-          if (shown && water.paused && !reduce) water.play().catch(() => {});
-          else if (!shown && !water.paused) water.pause();
         },
       });
 
@@ -509,27 +516,15 @@ export default function Journey() {
           "water",
         )
         .fromTo(
-          water,
-          { autoAlpha: 0, scale: 1.18 },
-          { autoAlpha: 1, scale: 1, duration: 1.2, ease: "power2.out", force3D: false },
-          "water+=0.9",
-        )
-        .fromTo(
           q(".jr__cap--leak"),
           { autoAlpha: 0, y: 30 },
           { autoAlpha: 1, y: 0, duration: 0.8, ease: "power3.out" },
           "water+=1.3",
         )
-        .to(water, { scale: 1.06, duration: 2.6, force3D: false }, "water+=2.1")
         .to(
           q(".jr__cap--leak"),
           { autoAlpha: 0, y: -30, duration: 0.6 },
           "water+=3.6",
-        )
-        .to(
-          water,
-          { autoAlpha: 0, scale: 1.12, duration: 1, ease: "power2.in", force3D: false },
-          "water+=3.8",
         )
         .to(
           scene,
@@ -636,14 +631,14 @@ export default function Journey() {
           },
           "dive",
         )
-        .to(env, { autoAlpha: 1, duration: 1.2 }, "dive+=1.1")
+        .fromTo(q(".jr__soft"), { autoAlpha: 0 }, { autoAlpha: 1, duration: 1.3, ease: "power1.inOut" }, "dive+=0.8")
         .to(
           q(".jr__tint"),
-          { autoAlpha: 1, duration: 1.2, ease: "power2.inOut" },
-          "dive+=1.9",
+          { autoAlpha: 0.62, duration: 1.4, ease: "power2.inOut" },
+          "dive+=1.6",
         )
         .to(phoneWrap, { autoAlpha: 1, duration: 0.5 }, "dive+=1.8")
-        .to(scene, { autoAlpha: 0, duration: 0.4 }, "dive+=2.1")
+        .set(canvas, { autoAlpha: 0 }, "dive+=2.2")
         .to(q(".jr__app-ui"), { autoAlpha: 1, duration: 0.6 }, "dive+=2.1")
 
         // ===== 6 · the app, one frame, the UI changes =====
@@ -733,7 +728,8 @@ export default function Journey() {
       // No cut-out, no zoom — one face, fitted inside the phone.
       tl.addLabel("tech", "tapSelect+=0.6");
       chapter(3, "tech");
-      tl.fromTo(techPhoto, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.9, ease: "power2.out" }, "tech").fromTo(
+      push(byName("date"), techPhoto as HTMLElement, "tech");
+      tl.fromTo(
         techCard,
         { autoAlpha: 0, scale: 0.72 },
         { autoAlpha: 1, scale: 1, duration: 1.2, ease: "expo.out" },
@@ -842,9 +838,24 @@ export default function Journey() {
         // hold the confirmed booking; the section then scrolls away as a whole (no empty frame)
         .to({}, { duration: 1.2 });
 
+      // Idle water: paused on the leak close-up, ping-pong the film's own last leak frames so the
+      // water keeps running. Same shot, same framing — nothing is layered on top.
+      const idle = () => {
+        const t = tl.time();
+        const w0 = tl.labels.water;
+        if (!reduce && t > w0 + 0.3 && t < w0 + 3.9 && performance.now() - lastScrub > 140) {
+          const span = 10; // frames
+          const ph = (performance.now() / 1000) * 8; // 8 fps, gentle
+          const tri = Math.abs((ph % (2 * span)) - span); // span…0…span
+          seq.draw(f(STORY.leakEnd - tri));
+        }
+      };
+      gsap.ticker.add(idle);
+
       return () => {
         removeEventListener("ora:ready", go);
         removeEventListener("resize", applyFall);
+        gsap.ticker.remove(idle);
       };
     }, el);
 
@@ -865,6 +876,9 @@ export default function Journey() {
       {/* ---------- the film ---------- */}
       <div className="jr__scene">
         <canvas className="jr__canvas" />
+        {/* the last film frame, pre-blurred: the dive into the phone is a focus pull on the same shot */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className="jr__soft" src="/img/story-soft.webp" alt="" aria-hidden decoding="async" fetchPriority="low" />
         <div
           className="jr__filmscreen"
           style={{
@@ -908,18 +922,6 @@ export default function Journey() {
           }}
         />
       </div>
-      <video
-        className="jr__water"
-        muted
-        loop
-        playsInline
-        preload="none"
-        poster="/video/water-poster.jpg"
-        aria-hidden
-      >
-        <source src="/video/water-loop.webm" type="video/webm" />
-        <source src="/video/water-loop.mp4" type="video/mp4" />
-      </video>
       <div className="jr__env" aria-hidden />
       <div className="jr__tint" aria-hidden />
       <div className="jr__shade" aria-hidden />
@@ -1131,8 +1133,9 @@ export default function Journey() {
       </div>
 
       <div className="jr__app-ui">
+        <div className="jr__chapterbg glass" aria-hidden />
         {CHAPTERS.map((c) => (
-          <div className="jr__chapter glass" key={c.k}>
+          <div className="jr__chapter jr__chapter--text" key={c.k}>
             <span className="eyebrow">
               <Mark /> {c.k} · {c.eyebrow}
             </span>

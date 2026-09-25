@@ -2881,3 +2881,37 @@ body {
 .fc--rep { --tint: #e0e6fa; }     /* Pest periwinkle */
 .fc--addr { --tint: #e2ecd8; }    /* Landscaping green */
 .fc--book { --tint: #fae3c0; }    /* Handyman yellow */
+
+/* ---------- round 11: one scene — focus pull into the phone, one persistent chapter card ---------- */
+.jr__soft {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: fill;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.jr__chapterbg {
+  position: absolute;
+  border-radius: 30px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.jr__chapter--text {
+  padding: 30px 32px 32px;
+  width: min(460px, 34vw);
+  background: none;
+}
+@media (max-width: 860px) {
+  .jr__chapterbg {
+    border-radius: 22px;
+  }
+  .jr__chapter--text {
+    width: auto;
+    padding: 18px 20px;
+  }
+}
