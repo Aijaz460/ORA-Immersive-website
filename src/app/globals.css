@@ -268,7 +268,8 @@ html.is-loading body {
   position: fixed;
   inset: 0;
   z-index: 150;
-  background: #000;
+  /* the same deep red as the 3D stage it hands over to */
+  background: #47150f;
   color: var(--yellow-light);
   display: grid;
   place-items: center;
@@ -2927,9 +2928,16 @@ body {
 }
 /* until WebGL paints (or if it can't), the same stage in CSS: brand red with the flat mark */
 .jr__logo3d:not(.is-ready) {
-  background:
-    url("/img/ora-mark.svg") center / min(34vmin, 300px) no-repeat,
-    radial-gradient(90% 80% at 50% 50%, #6f281c 0%, #47150f 45%, #1e0906 100%);
+  /* until WebGL paints: the same red stage (the 3D mark is the only logo on this screen) */
+  background: radial-gradient(90% 80% at 50% 50%, #6f281c 0%, #47150f 45%, #1e0906 100%);
+}
+/* while the 3D mark holds the screen, the header shows only the wordmark — one logo at a time */
+html.on-mark .header .logo__mark {
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.header .logo__mark {
+  transition: opacity 0.4s;
 }
 .jr__logocue {
   position: absolute;

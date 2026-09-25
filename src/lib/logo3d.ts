@@ -117,8 +117,12 @@ export function createLogo3D(canvas: HTMLCanvasElement, { reduce = false } = {})
     sheenColor: new THREE.Color(0xffdcb4),
     sheenRoughness: 0.35,
     envMapIntensity: 1.35,
+    transparent: true, // same render list as the stage, so renderOrder draws it on top
+    opacity: 1,
+    depthWrite: true,
   });
   const mark = new THREE.Mesh(geo, pearl);
+  mark.renderOrder = 0;
   const markGroup = new THREE.Group();
   markGroup.add(mark);
   scene.add(markGroup);
@@ -133,11 +137,15 @@ export function createLogo3D(canvas: HTMLCanvasElement, { reduce = false } = {})
     new THREE.Vector2(-40, 40),
   ]);
   stageShape.holes.push(new THREE.Path(holeWide));
+  // Stage + portal cover are a background layer: drawn first, never depth-tested, never written to
+  // depth — so the mark can swing in any direction and no part of it is ever hidden behind the red.
   const stageMat = new THREE.ShaderMaterial({
     vertexShader: STAGE_VERT,
     fragmentShader: STAGE_FRAG,
     uniforms: { uAlpha: { value: 1 } },
-    depthWrite: true,
+    transparent: true,
+    depthTest: false,
+    depthWrite: false,
     toneMapped: false,
   });
   const coverMat = new THREE.ShaderMaterial({
@@ -145,6 +153,7 @@ export function createLogo3D(canvas: HTMLCanvasElement, { reduce = false } = {})
     fragmentShader: STAGE_FRAG,
     uniforms: { uAlpha: { value: 1 } },
     transparent: true,
+    depthTest: false,
     depthWrite: false,
     toneMapped: false,
   });
@@ -153,6 +162,8 @@ export function createLogo3D(canvas: HTMLCanvasElement, { reduce = false } = {})
   const cover = new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape(holeWide), 96), coverMat);
   stage.position.z = backZ;
   cover.position.z = backZ + 0.0005;
+  stage.renderOrder = -2;
+  cover.renderOrder = -1;
   scene.add(stage, cover);
 
   // ---- light: warm key, red rim from the stage, and a highlight that follows the pointer ----

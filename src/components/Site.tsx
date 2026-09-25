@@ -12,7 +12,6 @@ import Showcase from "./scenes/Showcase";
 import Features from "./scenes/Features";
 import Download from "./scenes/Download";
 import Footer from "./Footer";
-import { Mark } from "./ui/Logo";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -67,9 +66,6 @@ export default function Site() {
 
     const intro = gsap
       .timeline({ paused: true })
-      .from(pq(".pre__icon"), { scale: 0.4, autoAlpha: 0, duration: 0.7, ease: "back.out(1.6)" })
-      .to(pq(".pre__icon"), { scale: 40, borderRadius: 0, duration: 0.9, ease: "expo.inOut" }, "+=0.15")
-      .set(pq(".pre__icon"), { autoAlpha: 0 })
       .set(p, { backgroundColor: "#47150F" })
       .from(pq(".pre__word > *"), { yPercent: 120, duration: 0.9, stagger: 0.08, ease: "expo.out" }, "-=0.25")
       .from(pq(".pre__meta"), { autoAlpha: 0, duration: 0.6 }, "<");
@@ -78,7 +74,6 @@ export default function Site() {
       .timeline({ paused: true })
       .to(pq(".pre__palm"), { autoAlpha: 0.55, scale: 1, duration: 1, ease: "power2.out" })
       .to(pq(".pre__word .logo__word, .pre__meta"), { autoAlpha: 0, y: -20, duration: 0.5, ease: "power2.in" }, "-=0.4")
-      .to(pq(".pre__word .logo__mark"), { scale: 1.6, rotate: 90, duration: 0.8, ease: "expo.inOut" }, "<")
       .to(p, { clipPath: "inset(0% 0% 100% 0%)", duration: 1.2, ease: "expo.inOut" }, "-=0.35")
       .add(() => {
         document.documentElement.classList.remove("is-loading");
@@ -215,13 +210,9 @@ export default function Site() {
     <>
       <div className="pre" ref={pre} aria-hidden>
         <div className="pre__palm" />
-        <div className="pre__icon">
-          <Mark />
-        </div>
         <div className="pre__word">
           <span className="logo">
             <span className="logo__word">Ora</span>
-            <Mark className="logo__mark" />
           </span>
         </div>
         <div className="pre__meta">

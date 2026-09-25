@@ -172,6 +172,7 @@ export default function Journey() {
 
     // the 3D mark (three.js) loads on demand; the stage paints brand red until it is ready
     let logo: Logo3D | null = null;
+    document.documentElement.classList.add("on-mark");
     let logoGone = false;
     const logoCanvas = q<HTMLCanvasElement>(".jr__logo3d")[0];
     import("@/lib/logo3d").then(({ createLogo3D }) => {
@@ -428,7 +429,19 @@ export default function Journey() {
       const LOGO = 3.4;
       const logoState = { p: 0 };
       tl.addLabel("logo", 0)
-        .to(logoState, { p: 1, duration: LOGO, ease: "none", onUpdate: () => logo?.setProgress(logoState.p) }, "logo")
+        .to(
+          logoState,
+          {
+            p: 1,
+            duration: LOGO,
+            ease: "none",
+            onUpdate: () => {
+              logo?.setProgress(logoState.p);
+              document.documentElement.classList.toggle("on-mark", logoState.p < 0.97);
+            },
+          },
+          "logo",
+        )
         .to(q(".jr__logocue"), { autoAlpha: 0, y: 10, duration: 0.5 }, "logo")
         .set(q(".jr__logo3d"), { autoAlpha: 0 }, `logo+=${LOGO}`)
         // the headline arrives on the clouds as we come through
