@@ -2915,3 +2915,47 @@ body {
     padding: 18px 20px;
   }
 }
+
+/* ---------- round 12: the Ora mark in 3D — the first screen and the portal into the story ---------- */
+.jr__logo3d {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+/* until WebGL paints (or if it can't), the same stage in CSS: brand red with the flat mark */
+.jr__logo3d:not(.is-ready) {
+  background:
+    url("/img/ora-mark.svg") center / min(34vmin, 300px) no-repeat,
+    radial-gradient(90% 80% at 50% 50%, #6f281c 0%, #47150f 45%, #1e0906 100%);
+}
+.jr__logocue {
+  position: absolute;
+  z-index: 10;
+  left: 0;
+  right: 0;
+  bottom: clamp(24px, 6vh, 56px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: rgba(254, 247, 219, 0.78);
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+.jr__logocue i {
+  width: 1px;
+  height: 44px;
+  background: linear-gradient(rgba(254, 247, 219, 0.8), transparent);
+  transform-origin: top;
+  animation: cue-drop 2.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+@keyframes cue-drop {
+  0% { transform: scaleY(0); opacity: 1; }
+  60% { transform: scaleY(1); opacity: 1; }
+  100% { transform: scaleY(1); opacity: 0; }
+}

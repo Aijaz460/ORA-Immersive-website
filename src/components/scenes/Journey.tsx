@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { createSequence } from "@/lib/sequence";
+import type { Logo3D } from "@/lib/logo3d";
 import {
   APP_H,
   APP_W,
@@ -169,6 +170,24 @@ export default function Journey() {
     const onResize = () => seq.resize();
     addEventListener("resize", onResize);
 
+    // the 3D mark (three.js) loads on demand; the stage paints brand red until it is ready
+    let logo: Logo3D | null = null;
+    let logoGone = false;
+    const logoCanvas = q<HTMLCanvasElement>(".jr__logo3d")[0];
+    import("@/lib/logo3d").then(({ createLogo3D }) => {
+      if (logoGone) return;
+      try {
+        logo = createLogo3D(logoCanvas, { reduce });
+      } catch {
+        logoCanvas.classList.add("is-fallback"); // no WebGL: the flat brand mark stands in
+      }
+    });
+    const onLogoPointer = (e: PointerEvent) =>
+      logo?.setPointer((e.clientX / innerWidth) * 2 - 1, (e.clientY / innerHeight) * 2 - 1);
+    const onLogoResize = () => logo?.resize();
+    addEventListener("pointermove", onLogoPointer);
+    addEventListener("resize", onLogoResize);
+
     const ctx = gsap.context(() => {
       const scene = q(".jr__scene")[0];
       const filmScreen = q(".jr__filmscreen")[0];
@@ -194,26 +213,11 @@ export default function Journey() {
       const cardsIn = q<HTMLElement>(".jr__card");
       const state = { frame: 0, count: 0 };
 
-      // ---------- intro once the preloader lifts ----------
+      // ---------- intro once the preloader lifts: the 3D Ora mark holds the first screen ----------
       const introTl = gsap
         .timeline({ paused: true })
-        .from(q(".jr__hero .line > span"), {
-          yPercent: 115,
-          duration: 1.5,
-          ease: "expo.out",
-          stagger: 0.1,
-        })
-        .from(
-          q(".jr__hero .eyebrow, .jr__hero p, .jr__cta > *, .jr__stats > *"),
-          {
-            y: 20,
-            autoAlpha: 0,
-            duration: 1.2,
-            ease: "expo.out",
-            stagger: 0.06,
-          },
-          0.3,
-        )
+        .call(() => logo?.intro())
+        .from(q(".jr__logocue"), { autoAlpha: 0, y: 16, duration: 1.2, ease: "expo.out" }, 0.6)
         .from(
           q(".jr__puffw"),
           { autoAlpha: 0, y: 40, duration: 2, ease: "expo.out", stagger: 0.08 },
@@ -401,7 +405,7 @@ export default function Journey() {
         clipPath: "inset(12.3% 76.8% 79.8% 5.9% round 22%)",
       });
 
-      const units = 51;
+      const units = 57;
       const tl = gsap.timeline({
         defaults: { ease: "none" },
         scrollTrigger: {
@@ -419,6 +423,29 @@ export default function Journey() {
           seq.draw(state.frame);
         },
       });
+
+      // ===== −1 · the Ora mark: turn to face us, fly through its square centre into the sky =====
+      const LOGO = 3.4;
+      const logoState = { p: 0 };
+      tl.addLabel("logo", 0)
+        .to(logoState, { p: 1, duration: LOGO, ease: "none", onUpdate: () => logo?.setProgress(logoState.p) }, "logo")
+        .to(q(".jr__logocue"), { autoAlpha: 0, y: 10, duration: 0.5 }, "logo")
+        .set(q(".jr__logo3d"), { autoAlpha: 0 }, `logo+=${LOGO}`)
+        // the headline arrives on the clouds as we come through
+        .addLabel("hero", `logo+=${LOGO - 0.4}`)
+        .fromTo(
+          q(".jr__hero .line > span"),
+          { yPercent: 115 },
+          { yPercent: 0, duration: 1, ease: "expo.out", stagger: 0.08 },
+          "hero",
+        )
+        .fromTo(
+          q(".jr__hero .eyebrow, .jr__hero p:not(.jr__title), .jr__cta > *, .jr__stats > *"),
+          { autoAlpha: 0, y: 20 },
+          { autoAlpha: 1, y: 0, duration: 0.8, ease: "expo.out", stagger: 0.05 },
+          "hero+=0.2",
+        )
+        .to({}, { duration: 1.3 }); // a beat on the clouds before the fall
 
       // ===== 0 · fall through the clouds =====
       // One scene, one camera: the live film sits inside a real opening in the cloud layer from the
@@ -864,6 +891,10 @@ export default function Journey() {
     return () => {
       ctx.revert();
       removeEventListener("resize", onResize);
+      removeEventListener("pointermove", onLogoPointer);
+      removeEventListener("resize", onLogoResize);
+      logoGone = true;
+      logo?.dispose();
     };
   }, []);
 
@@ -959,6 +990,13 @@ export default function Journey() {
             <img className="jr__puff" data-d={pf.d} src={`/img/sky/puff-${pf.n}.webp`} alt="" decoding="async" />
           </span>
         ))}
+      </div>
+
+      {/* ---------- the first screen: the Ora mark in 3D, and the portal into the story ---------- */}
+      <canvas className="jr__logo3d" aria-hidden />
+      <div className="jr__logocue" aria-hidden>
+        <span>Scroll to enter</span>
+        <i />
       </div>
 
       {/* ---------- film captions ---------- */}
