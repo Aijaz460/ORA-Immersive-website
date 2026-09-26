@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { UNIT_VH, isMobile, prefersReducedMotion } from "@/lib/stage";
+import { registerSteps } from "@/lib/steps";
 import { Mark } from "../ui/Logo";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -159,6 +160,15 @@ export default function Showcase() {
       );
       layout(0);
 
+      // guided scroll: one gesture = one service card
+      const unstep = registerSteps("showcase", () => {
+        const st = tl.scrollTrigger!;
+        const at = (t: number) => st.start + ((st.end - st.start) * t) / tl.duration();
+        return [st.start, ...Array.from({ length: n }, (_, i) => at(HOLD + i * PER)), st.end].filter(
+          (v, i, a) => i === 0 || v - a[i - 1] > 4,
+        );
+      });
+
       // arrows jump to a slide's scroll position
       const go = (dir: number) => {
         const st = tl.scrollTrigger!;
@@ -187,6 +197,7 @@ export default function Showcase() {
         next.removeEventListener("click", onNext);
         el.removeEventListener("pointermove", onMove);
         demos.forEach((d) => d.kill());
+        unstep();
       };
     }, el);
     return () => ctx.revert();

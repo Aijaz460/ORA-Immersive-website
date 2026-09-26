@@ -18,7 +18,7 @@ export const TAPS = {
   day: { left: 278, top: 549 },
   slot: { left: 293, top: 680 },
   select: { left: 290, top: 814 },
-  confirm: { left: 284, top: 758 }, // price CTA on "Review your order"
+  confirm: { left: 292, top: 816 }, // Confirm on "Plumbing – Order Review"
 };
 
 // Crop geometry of the technician photo: the in-phone photo (1062px wide) and the card/cut-out

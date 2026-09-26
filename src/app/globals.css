@@ -2619,8 +2619,8 @@ h3 em {
 }
 .jr__review .jr__rv-card {
   position: absolute;
-  height: auto;
   inset: auto;
+  border-radius: 16px;
 }
 
 /* ---------- round 8: headings always fit their card (never clipped), descenders never cut ---------- */
@@ -3141,30 +3141,44 @@ div.jr__techcard {
   opacity: 0;
   visibility: hidden;
 }
-/* 3D technician (Higgsfield, keyed): stands beside the device, then rides across the frame */
-.jr__av {
+/* chapter 07 "yard": a square stage beside the chapter card; layers sit where the generated clip expects them */
+.jr__yard {
   position: absolute;
-  right: 5vw;
-  bottom: 1vh;
-  height: 84vh;
-  aspect-ratio: 9 / 16;
+  right: 3vw;
+  top: 50%;
+  width: min(86vh, 58vw);
+  aspect-ratio: 1;
+  margin-top: calc(min(86vh, 58vw) / -2);
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
 }
+.jr__yard-scooter {
+  position: absolute;
+  max-width: none;
+  height: auto;
+  aspect-ratio: 1;
+}
+.jr__yard-man {
+  position: absolute;
+  aspect-ratio: 9 / 16;
+  transform-origin: 50% 100%;
+}
 .jr__avcv,
-.jr__ridecv {
+.jr__yardcv {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
 }
+.jr__yardcv {
+  visibility: hidden;
+}
 .jr__notif {
   position: absolute;
-  left: 47%;
-  top: 20%;
-  width: 66%;
-  min-height: 11.5%;
+  left: 44%;
+  top: 14%;
+  width: min(360px, 50%);
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: center;
@@ -3230,39 +3244,21 @@ div.jr__techcard {
   opacity: 0;
   visibility: hidden;
 }
-.jr__ride {
-  position: absolute;
-  left: 50%;
-  top: 60%;
-  width: min(66vh, 78vw);
-  aspect-ratio: 1;
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-}
-.jr__ride-shadow {
-  position: absolute;
-  left: 10%;
-  right: 12%;
-  bottom: 3%;
-  height: 8%;
-  border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(71, 21, 15, 0.3), transparent);
-}
 @media (max-width: 860px) {
-  .jr__av {
+  .jr__yard {
     right: auto;
-    left: 50%;
-    height: 60vh;
+    left: -2vw;
+    top: auto;
+    bottom: 2vh;
+    width: 104vw;
+    margin-top: 0;
   }
   .jr__notif {
-    left: 24%;
-    width: 84%;
+    left: 18%;
+    top: 4%;
+    width: 78%;
     gap: 7px;
     padding: 8px 9px;
     border-radius: 14px;
-  }
-  .jr__ride {
-    top: 66%;
   }
 }

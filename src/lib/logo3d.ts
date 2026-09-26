@@ -74,7 +74,8 @@ const smooth = (a: number, b: number, x: number) => {
 
 export function createLogo3D(canvas: HTMLCanvasElement, { reduce = false } = {}): Logo3D {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "high-performance" });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  // 1.5× with MSAA stays crisp on Retina at ~44% less fill than 2× (the pearl shader is the costliest paint on the page)
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.08;

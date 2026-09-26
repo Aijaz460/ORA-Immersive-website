@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { createSequence } from "@/lib/sequence";
+import { registerSteps } from "@/lib/steps";
 import type { Logo3D } from "@/lib/logo3d";
 import {
   APP_H,
@@ -54,19 +55,23 @@ const CONFETTI = Array.from({ length: 26 }, (_, i) => ({
   s: 0.6 + ((i * 13) % 7) / 10,
 }));
 
-// "Review your order" (Figma 20:33994): exact card crops, laid out in the glass window of the
-// base screen (app px; window = x 16…396, y 267…718, under the fixed title and above the CTA).
-const RV_SCROLL = 155;
+// "Plumbing – Order Review" (Figma 2:13972): exact 2× card crops over the base screen, app px.
+// The customer's own choices (service, slot, address, request) unfold onto the glass one by one.
 const RV_CARDS = [
-  { k: "service", x: 16, y: 8, w: 220 },
-  { k: "date", x: 244, y: 8, w: 120 },
-  { k: "time", x: 244, y: 116, w: 120 },
-  { k: "dur", x: 16, y: 223, w: 120 },
-  { k: "addr", x: 144, y: 223, w: 220 },
-  { k: "ppl", x: 16, y: 329, w: 120 },
-  { k: "toggle", x: 16, y: 435, w: 348 },
-  { k: "special", x: 16, y: 498, w: 348 },
+  { k: "service", x: 32, y: 361, w: 170, h: 132 },
+  { k: "date", x: 210, y: 361, w: 170, h: 132 },
+  { k: "about", x: 32, y: 505, w: 348, h: 56 },
+  { k: "addr", x: 32, y: 573, w: 348, h: 72 },
+  { k: "special", x: 32, y: 689, w: 348, h: 75 },
 ];
+
+// Chapter 07 stage ("the yard"), fractions of a square: his parked scooter and where he stands.
+// The Higgsfield ride-off clip was generated from exactly this composition, so it takes over seamlessly.
+const YARD_FRAMES = 77; // clip frames 1–230: the last ones before he leaves the generated frame
+const YARD = {
+  scooter: { left: -11.4, top: 7.4, size: 90 },
+  man: { left: 61.25, top: 28, h: 66.7 },
+};
 
 // Opening sky (Higgsfield stills): the cloud deck with an opening onto the villa community, and
 // keyed cloud puffs at different depths that rush past as you fall through it.
@@ -216,11 +221,11 @@ export default function Journey() {
       fit: "contain",
       focusY: 1,
     });
-    const rideSeq = createSequence(q<HTMLCanvasElement>(".jr__ridecv")[0], {
+    const rideSeq = createSequence(q<HTMLCanvasElement>(".jr__yardcv")[0], {
       ...clip,
-      path: "/seq/ride",
-      count: 61,
-      sourceWidth: 720,
+      path: "/seq/yard",
+      count: YARD_FRAMES,
+      sourceWidth: 960,
       alpha: true,
       fit: "contain",
       focusY: 1,
@@ -458,7 +463,8 @@ export default function Journey() {
           pin: true,
           anticipatePin: 1,
           // a soft catch-up on top of Lenis: the camera glides to where you scrolled instead of snapping
-          scrub: reduce ? true : 0.8,
+          // short catch-up: the stepper already eases each glide, so the scene tracks it closely
+          scrub: reduce ? true : 0.3,
           invalidateOnRefresh: true,
           onUpdate: (self) =>
             gsap.set(q(".jr__progress i"), { scaleX: self.progress }),
@@ -954,7 +960,7 @@ export default function Journey() {
       tl.fromTo(
         rvCards,
         { autoAlpha: 0, rotateX: -75, z: -140, y: 60, transformPerspective: 900, transformOrigin: "50% 0%" },
-        { autoAlpha: 1, rotateX: 0, z: 0, y: 0, duration: 0.9, ease: "expo.out", stagger: 0.1 },
+        { autoAlpha: 1, rotateX: 0, z: 0, y: 0, duration: 0.9, ease: "expo.out", stagger: 0.12 },
         "review+=0.7",
       );
       const popCard = (k: number, at: string) =>
@@ -981,18 +987,12 @@ export default function Journey() {
             },
             ">",
           );
-      // the selections the customer made: service, day, slot…
-      [0, 1, 2].forEach((k, i) => popCard(k, `review+=${2 + i * 0.28}`));
-      tl.fromTo(
-        q(".jr__rv-inner"),
-        { y: 0 },
-        { y: -RV_SCROLL, duration: 1.5, ease: "power2.inOut" },
-        "review+=3.1",
-      );
-      // …then address and the special request once they scroll into view
-      popCard(4, "review+=4.5");
-      popCard(7, "review+=4.78");
-      tapAt(TAPS.confirm, "tapConfirm", "review+=5.4");
+      // the choices the customer made light up in order: service and slot, then address and request
+      popCard(0, "review+=2");
+      popCard(1, "review+=2.28");
+      popCard(3, "review+=3.1");
+      popCard(4, "review+=3.38");
+      tapAt(TAPS.confirm, "tapConfirm", "review+=4.3");
 
       // ===== Confirmed: the card lands in 3D, a seal and brand confetti burst around the device =====
       tl.addLabel("done", "tapConfirm+=0.3");
@@ -1056,74 +1056,74 @@ export default function Journey() {
         )
         .to(q(".jr__seal"), { autoAlpha: 0, scale: 0.7, y: -40, duration: 0.5, ease: "power2.in" }, "done+=2.7");
 
-      // ===== On the way: the 3D technician gets the job, accepts, and rides off with his tools =====
+      // ===== On the way: his scooter is parked, he hops in, takes the job, helmets up and rides off =====
       tl.addLabel("accept", "done+=3.3");
       chapter(6, "accept");
-      const av = q(".jr__av")[0];
+      const yard = q<HTMLElement>(".jr__yard")[0];
+      const parked = q(".jr__yard-scooter")[0];
+      const av = q(".jr__yard-man")[0];
       const notif = q(".jr__notif")[0];
-      const ride = q<HTMLElement>(".jr__ride")[0];
-      const AV = 3.6; // scroll units for the accept clip
-      gsap.set(ride, { xPercent: -50, yPercent: -50 });
-      if (isMobile()) gsap.set(av, { xPercent: -50 });
+      const yardCv = q(".jr__yardcv")[0];
+      const AV = 3.2; // scroll units for the accept clip
+      const AV_END = 38 / 60; // last accept frame before the model's garbled pill; the ride clip starts here
+      const RIDE = 7; // scroll units for the helmet-on, mount and ride-off clip
       tl.to(
         phoneWrap,
-        {
-          x: () => (isMobile() ? 0 : -innerWidth * 0.07),
-          scale: () => (isMobile() ? 0.8 : 0.86),
-          autoAlpha: () => (isMobile() ? 0 : 1),
-          duration: 1.2,
-          ease: "power3.inOut",
-        },
+        { x: () => -innerWidth * (isMobile() ? 0.2 : 0.16), y: 30, scale: 0.8, autoAlpha: 0, duration: 0.7, ease: "power2.in" },
         "accept",
       )
-        .to(phone, { rotateY: 14, duration: 1.2, ease: "power3.inOut" }, "accept")
-        .fromTo(
-          av,
-          { autoAlpha: 0, x: 80, scale: 0.94 },
-          { autoAlpha: 1, x: 0, scale: 1, duration: 1, ease: "expo.out" },
-          "accept+=0.4",
-        )
-        .to(state, { accept: 1, duration: AV, ease: "none" }, "accept+=0.6")
-        // the job notification pops from his phone (fully in before the clip's own pill appears)
+        // the yard slides in with his scooter already parked on its stand
+        .fromTo(yard, { autoAlpha: 0, x: 80 }, { autoAlpha: 1, x: 0, duration: 1, ease: "power3.out" }, "accept+=0.65")
+        // he hops in from the right, waving, and lands beside it
+        .fromTo(av, { xPercent: 150 }, { xPercent: 0, duration: 0.9, ease: "power2.out" }, "accept+=1")
+        .to(av, { keyframes: { yPercent: [0, -14, 0], easeEach: "sine.inOut" }, duration: 0.9 }, "accept+=1")
+        .to(av, { keyframes: { scaleY: [1, 0.95, 1], scaleX: [1, 1.03, 1] }, duration: 0.3 }, "accept+=1.85")
+        .to(state, { accept: AV_END, duration: AV, ease: "none" }, "accept+=1")
+        // the job lands on his phone
         .fromTo(
           notif,
-          { autoAlpha: 0, scale: 0.6, y: 24 },
-          { autoAlpha: 1, scale: 1, y: 0, duration: 0.2, ease: "back.out(2)" },
-          `accept+=${0.6 + AV * 0.58}`,
+          { autoAlpha: 0, scale: 0.7, y: 20 },
+          { autoAlpha: 1, scale: 1, y: 0, duration: 0.4, ease: "back.out(1.8)" },
+          `accept+=${1 + AV * 0.8}`,
         )
-        .to(q(".jr__notif b"), { scale: 0.9, duration: 0.12 }, `accept+=${0.7 + AV}`)
+        .to(q(".jr__notif b"), { scale: 0.92, duration: 0.12 }, `accept+=${1.3 + AV}`)
         .to(q(".jr__notif b"), { scale: 1, duration: 0.2 }, ">")
-        .to(q(".jr__notif .is-idle"), { autoAlpha: 0, duration: 0.15 }, `accept+=${0.8 + AV}`)
-        .fromTo(q(".jr__notif .is-done"), { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.2 }, `accept+=${0.85 + AV}`)
-        .to(q(".jr__notif b"), { backgroundColor: "#2f5a26", duration: 0.3 }, `accept+=${0.8 + AV}`);
+        .to(q(".jr__notif .is-idle"), { autoAlpha: 0, duration: 0.15 }, `accept+=${1.4 + AV}`)
+        .fromTo(q(".jr__notif .is-done"), { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.2 }, `accept+=${1.45 + AV}`)
+        .to(q(".jr__notif b"), { backgroundColor: "#2f5a26", duration: 0.3 }, `accept+=${1.4 + AV}`);
 
-      tl.addLabel("ride", `accept+=${1.6 + AV}`);
-      tl.to(av, { autoAlpha: 0, scale: 0.92, duration: 0.5, ease: "power2.in" }, "ride")
-        .to(notif, { autoAlpha: 0, y: -30, duration: 0.4, ease: "power2.in" }, "ride+=0.3")
-        .to(phoneWrap, { autoAlpha: 0, y: 40, duration: 0.8, ease: "power2.in" }, "ride")
-        .fromTo(
-          ride,
-          // enters large from the right, rides away up the frame into the distance
-          { autoAlpha: 1, x: () => innerWidth * 0.5 + ride.offsetWidth * 0.5, y: () => innerHeight * 0.08, scale: 1.08 },
-          {
-            // ends small, up the road and clear of the chapter card, fading into the haze
-            x: () => -innerWidth * (isMobile() ? 0 : 0.06),
-            y: () => -innerHeight * (isMobile() ? 0.02 : 0.12),
-            scale: 0.42,
-            duration: 5.2,
-            ease: "power1.out",
-            immediateRender: false,
-          },
-          "ride+=0.2",
-        )
-        .to(ride, { autoAlpha: 0, duration: 1.4, ease: "power1.in" }, "ride+=4")
-        .to(state, { ride: 1, duration: 5.2, ease: "none" }, "ride+=0.2")
-        .to({}, { duration: 0.3 });
+      // helmet on, onto the scooter, away: one generated clip that starts on this exact composition
+      tl.addLabel("ride", `accept+=${2.6 + AV}`);
+      tl.to(notif, { autoAlpha: 0, y: -24, duration: 0.5, ease: "power2.in" }, "ride")
+        .set([parked, av], { autoAlpha: 0 }, "ride+=0.1")
+        .set(yardCv, { autoAlpha: 1 }, "ride+=0.1")
+        .to(state, { ride: 1, duration: RIDE, ease: "none" }, "ride+=0.1")
+        // he pulls away: past the clip's own edge the page carries the same acceleration on, off to the
+        // left behind the chapter glass
+        .addLabel("away", `ride+=${RIDE + 0.1}`)
+        // fading before he reaches the chapter card, so nothing slides under the text
+        .to(yardCv, { x: () => -innerWidth * 0.4, duration: 1.4, ease: "power2.in" }, "away")
+        .to(yardCv, { autoAlpha: 0, duration: 0.8, ease: "power1.in" }, "away+=0.5")
+        .to({}, { duration: 0.4 });
+
+      // resting beats: inside the story every scroll gesture glides to the next one (lib/steps)
+      const at = (l: string, o = 0) => tl.labels[l] + o;
+      const beats = [
+        0, at("sky"), at("fly", 3.5), at("leak"), at("leak", 5), at("water", 2.6), at("wake"),
+        at("wake", 4.3), at("app", 1.9), at("plumb"), at("openPlumb"), at("tapFix", 0.6), at("date", 1.8),
+        at("tech", 2.1), at("tech", 4.6), at("review", 3), at("review", 4.1), at("done", 2.3),
+        at("accept", 2.2), at("accept", 2 + AV), at("ride", RIDE * 0.5), at("ride", RIDE * 0.8),
+      ];
+      const unstep = registerSteps("journey", () => {
+        const st = tl.scrollTrigger!;
+        const d = tl.duration();
+        return [...beats, d].map((t) => st.start + ((st.end - st.start) * t) / d);
+      });
 
       units = tl.duration();
       ScrollTrigger.refresh();
       // audit hook: continuity/contrast scripts seek to story beats by label
-      (window as unknown as { __oraJourney?: gsap.core.Timeline }).__oraJourney = tl;
+      Object.assign(window, { __oraJourney: tl, __oraBeats: [...beats, tl.duration()] });
 
       // Idle water: paused on the leak close-up, ping-pong the film's own last leak frames so the
       // water keeps running. Same shot, same framing — nothing is layered on top.
@@ -1140,6 +1140,7 @@ export default function Journey() {
       gsap.ticker.add(idle);
 
       return () => {
+        unstep();
         clearTimeout(clipTimer);
         removeEventListener("ora:ready", go);
         removeEventListener("resize", applyFall);
@@ -1392,24 +1393,22 @@ export default function Journey() {
                 <span className="jr__dim" aria-hidden />
               </div>
             ) : s === "review" ? (
-              // Review your order: Figma base + the order cards, live inside the glass panel
+              // Plumbing – Order Review: Figma base + the customer's order cards, live on the glass
               <div key={s} className="jr__scr jr__review">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img fetchPriority="low" decoding="async" src="/app/review-base.webp" alt="" />
-                <div className="jr__rv">
-                  <div className="jr__rv-inner">
-                    {RV_CARDS.map((c) => (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img fetchPriority="low" decoding="async"
-                        key={c.k}
-                        className="jr__rv-card"
-                        src={`/app/rv-${c.k}.webp`}
-                        alt=""
-                        style={{ left: c.x, top: c.y, width: c.w }}
-                      />
-                    ))}
-                  </div>
-                </div>
+                {RV_CARDS.map((c) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    fetchPriority="low"
+                    decoding="async"
+                    key={c.k}
+                    className="jr__rv-card"
+                    src={`/app/pr-${c.k}.webp`}
+                    alt=""
+                    style={{ left: c.x, top: c.y, width: c.w, height: c.h }}
+                  />
+                ))}
               </div>
             ) : (
               // eslint-disable-next-line @next/next/no-img-element
@@ -1488,9 +1487,24 @@ export default function Journey() {
 
       </div>
 
-      {/* ---------- the 3D technician: gets the job, accepts, rides off ---------- */}
-      <div className="jr__av" aria-hidden>
-        <canvas className="jr__avcv" />
+      {/* ---------- the 3D technician: his scooter waits, he takes the job, helmets up, rides off ---------- */}
+      <div className="jr__yard" aria-hidden>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          className="jr__yard-scooter"
+          src="/img/parked-scooter.webp"
+          alt=""
+          decoding="async"
+          fetchPriority="low"
+          style={{ left: `${YARD.scooter.left}%`, top: `${YARD.scooter.top}%`, width: `${YARD.scooter.size}%` }}
+        />
+        <div
+          className="jr__yard-man"
+          style={{ left: `${YARD.man.left}%`, top: `${YARD.man.top}%`, height: `${YARD.man.h}%` }}
+        >
+          <canvas className="jr__avcv" />
+        </div>
+        <canvas className="jr__yardcv" />
         <div className="jr__notif">
           <span className="jr__notif-icon">
             <Mark />
@@ -1506,6 +1520,7 @@ export default function Journey() {
           </b>
         </div>
       </div>
+
       <div className="jr__app-ui">
         <div className="jr__chapterbg glass" aria-hidden />
         {CHAPTERS.map((c) => (
@@ -1524,12 +1539,6 @@ export default function Journey() {
             <i key={c.k} />
           ))}
         </div>
-      </div>
-
-      {/* he rides past in front of everything: the foreground of the last shot */}
-      <div className="jr__ride" aria-hidden>
-        <span className="jr__ride-shadow" />
-        <canvas className="jr__ridecv" />
       </div>
 
       <div className="jr__progress" aria-hidden>
