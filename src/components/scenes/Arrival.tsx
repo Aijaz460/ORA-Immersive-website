@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { UNIT_VH, prefersReducedMotion } from "@/lib/stage";
+import { UNIT_VH } from "@/lib/stage";
 import Lines from "../ui/Lines";
 import { Mark } from "../ui/Logo";
 
@@ -17,7 +17,6 @@ export default function Arrival() {
   useEffect(() => {
     const el = root.current!;
     const q = gsap.utils.selector(el);
-    const reduce = prefersReducedMotion();
     const ctx = gsap.context(() => {
       const eta = q("[data-eta]")[0];
       const state = { eta: 18 };
@@ -30,7 +29,7 @@ export default function Arrival() {
             start: "top top",
             end: () => `+=${innerHeight * units * UNIT_VH}`,
             pin: true,
-            scrub: reduce ? true : 0.35,
+            scrub: true,
             invalidateOnRefresh: true,
           },
           onUpdate: () => (eta.textContent = String(Math.max(0, Math.round(state.eta)))),

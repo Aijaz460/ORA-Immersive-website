@@ -4,12 +4,10 @@ import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { createSequence } from "@/lib/sequence";
-import { registerSteps } from "@/lib/steps";
 import type { Logo3D } from "@/lib/logo3d";
 import {
   APP_H,
   APP_W,
-  UNIT_VH,
   applyPhoneScale,
   isMobile,
   phoneScale,
@@ -451,24 +449,11 @@ export default function Journey() {
         clipPath: "inset(12.3% 76.8% 79.8% 5.9% round 22%)",
       });
 
-      // scroll length follows the story itself: every timeline unit gets the same stretch of scroll
-      // (measured once the timeline is built, then the triggers refresh)
-      let units = 70;
+      // The story is one paused timeline; the scroll drives it through a pace map (bottom of this
+      // block) so every beat gets a scroll length that matches how much happens in it.
       const tl = gsap.timeline({
         defaults: { ease: "none" },
-        scrollTrigger: {
-          trigger: el,
-          start: "top top",
-          end: () => `+=${innerHeight * units * UNIT_VH}`,
-          pin: true,
-          anticipatePin: 1,
-          // a soft catch-up on top of Lenis: the camera glides to where you scrolled instead of snapping
-          // short catch-up: the stepper already eases each glide, so the scene tracks it closely
-          scrub: reduce ? true : 0.3,
-          invalidateOnRefresh: true,
-          onUpdate: (self) =>
-            gsap.set(q(".jr__progress i"), { scaleX: self.progress }),
-        },
+        paused: true,
         onUpdate: () => {
           lastScrub = performance.now();
           seq.draw(state.frame);
@@ -497,7 +482,9 @@ export default function Journey() {
           "logo",
         )
         .to(q(".jr__logocue"), { autoAlpha: 0, y: 10, duration: 0.5 }, "logo")
-        .set(q(".jr__logo3d"), { autoAlpha: 0 }, `logo+=${LOGO}`)
+        // opacity only: toggling visibility on a live WebGL canvas makes the compositor drop and rebuild
+        // its layer, a one-off stall of up to a second on the first scroll
+        .set(q(".jr__logo3d"), { opacity: 0 }, `logo+=${LOGO}`)
         // the headline arrives on the clouds as we come through
         .addLabel("hero", `logo+=${LOGO - 0.4}`)
         .fromTo(
@@ -1106,24 +1093,87 @@ export default function Journey() {
         .to(yardCv, { autoAlpha: 0, duration: 0.8, ease: "power1.in" }, "away+=0.5")
         .to({}, { duration: 0.4 });
 
-      // resting beats: inside the story every scroll gesture glides to the next one (lib/steps)
+      // ===== pace map: how many screens of scroll each stretch of the story gets =====
+      // Scroll drives the story 1:1 (Lenis alone does the smoothing, like any native page); what
+      // changes is only the distance: a stretch where a lot happens gets more scroll, so the pace
+      // feels even from the 3D mark to the ride-off. [timeline time, screens of scroll to get there]
       const at = (l: string, o = 0) => tl.labels[l] + o;
-      const beats = [
-        0, at("sky"), at("fly", 3.5), at("leak"), at("leak", 5), at("water", 2.6), at("wake"),
-        at("wake", 4.3), at("app", 1.9), at("plumb"), at("openPlumb"), at("tapFix", 0.6), at("date", 1.8),
-        at("tech", 2.1), at("tech", 4.6), at("review", 3), at("review", 4.1), at("done", 2.3),
-        at("accept", 2.2), at("accept", 2 + AV), at("ride", RIDE * 0.5), at("ride", RIDE * 0.8),
+      // Balanced by measurement (scratchpad pace audit: visual change per equal scroll step), so the
+      // film never rushes and the app beats never drag.
+      const PACE: [number, number][] = [
+        [0, 0],
+        [LOGO * 0.5, 1.0], // the mark turns to face you
+        [LOGO * 0.8, 1.1], // …closes in on its square opening
+        [LOGO * 0.9, 1.1], // …passes through it (a full-screen change: give it room)
+        [LOGO, 0.5], // …into the sky
+        [at("sky"), 0.6], // headline lands on the clouds
+        [at("fly", 3.5), 2.4], // fall through the clouds
+        [at("leak"), 2.0], // over the villas to the door
+        [at("leak", 5), 2.7], // inside, through the living room
+        [at("water"), 2.3], // round the corner to the basin
+        [at("water", 2.6), 1.0], // the leak close-up
+        [at("wake"), 1.5], // he lifts his phone
+        [at("wake", 4.3), 1.0], // taps Ora, the splash
+        [at("dive"), 0.5],
+        [at("app"), 1.4], // into the screen
+        [at("app", 1.9), 0.8], // Services
+        [at("plumb"), 1.0], // the list scrolls
+        [at("openPlumb"), 0.8], // Plumbing lifts off, selected
+        [at("tapFix", 0.6), 0.9], // its screen, the fixture
+        [at("date", 1.8), 0.8], // the date card lands
+        [at("tech", 2.1), 1.3], // slot, select, the flip to your technician
+        [at("tech", 4.6), 1.2], // he smiles and folds his arms
+        [at("review", 3), 1.2], // the order cards unfold
+        [at("review", 4.3), 0.3], // your choices light up, confirm
+        [at("done", 2.3), 1.1], // booked: seal and confetti
+        [at("accept", 2.2), 1.4], // his scooter is parked, he hops in
+        [at("accept", 2 + AV), 0.6], // the job lands, he accepts
+        [at("ride", RIDE * 0.5), 1.2], // phone away, helmet on
+        [at("ride", RIDE * 0.8), 1.0], // onto the scooter
+        [tl.duration(), 1.6], // and away
       ];
-      const unstep = registerSteps("journey", () => {
-        const st = tl.scrollTrigger!;
-        const d = tl.duration();
-        return [...beats, d].map((t) => st.start + ((st.end - st.start) * t) / d);
+      const cum: number[] = [];
+      PACE.reduce((a, [, sc]) => (cum.push(a + sc), a + sc), 0);
+      const TOTAL = cum[cum.length - 1];
+      const timeAt = (screens: number) => {
+        let i = 1;
+        while (i < PACE.length - 1 && cum[i] < screens) i++;
+        const k = gsap.utils.clamp(0, 1, (screens - cum[i - 1]) / (cum[i] - cum[i - 1] || 1));
+        return PACE[i - 1][0] + (PACE[i][0] - PACE[i - 1][0]) * k;
+      };
+      const screensAt = (t: number) => {
+        let i = 1;
+        while (i < PACE.length - 1 && PACE[i][0] < t) i++;
+        const k = gsap.utils.clamp(0, 1, (t - PACE[i - 1][0]) / (PACE[i][0] - PACE[i - 1][0] || 1));
+        return cum[i - 1] + (cum[i] - cum[i - 1]) * k;
+      };
+      const progressBar = q(".jr__progress i");
+      const st = ScrollTrigger.create({
+        trigger: el,
+        start: "top top",
+        end: () => `+=${innerHeight * TOTAL}`,
+        pin: true,
+        anticipatePin: 1,
+        onUpdate: (self) => {
+          tl.time(timeAt(self.progress * TOTAL));
+          gsap.set(progressBar, { scaleX: self.progress });
+        },
       });
-
-      units = tl.duration();
+      // resize: rebuild function-based values from the start state, then return to where we were
+      const onRefreshInit = () => {
+        tl.time(0, true);
+        tl.invalidate();
+      };
+      const onRefresh = () => tl.time(timeAt(st.progress * TOTAL), true);
+      ScrollTrigger.addEventListener("refreshInit", onRefreshInit);
+      ScrollTrigger.addEventListener("refresh", onRefresh);
+      tl.time(0);
       ScrollTrigger.refresh();
-      // audit hook: continuity/contrast scripts seek to story beats by label
-      Object.assign(window, { __oraJourney: tl, __oraBeats: [...beats, tl.duration()] });
+      // audit hook: scripts seek to story moments by label (scroll position of a timeline time)
+      Object.assign(window, {
+        __oraJourney: tl,
+        __oraSeekY: (t: number) => st.start + screensAt(t) * innerHeight,
+      });
 
       // Idle water: paused on the leak close-up, ping-pong the film's own last leak frames so the
       // water keeps running. Same shot, same framing — nothing is layered on top.
@@ -1140,7 +1190,8 @@ export default function Journey() {
       gsap.ticker.add(idle);
 
       return () => {
-        unstep();
+        ScrollTrigger.removeEventListener("refreshInit", onRefreshInit);
+        ScrollTrigger.removeEventListener("refresh", onRefresh);
         clearTimeout(clipTimer);
         removeEventListener("ora:ready", go);
         removeEventListener("resize", applyFall);

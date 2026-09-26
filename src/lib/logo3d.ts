@@ -216,7 +216,7 @@ export function createLogo3D(canvas: HTMLCanvasElement, { reduce = false } = {})
 
     // fly through the square opening
     const fly = smooth(0.22, 1, progress);
-    camera.position.set(0, 0, z0 - (z0 + 0.7) * Math.pow(fly, 2.2));
+    camera.position.set(0, 0, z0 - (z0 + 0.7) * Math.pow(fly, 1.6)); // gentler approach: no lunge at the end
     camera.lookAt(0, 0, camera.position.z - 1);
     coverMat.uniforms.uAlpha.value = 1 - smooth(0.3, 0.6, progress); // the portal opens onto the sky
 

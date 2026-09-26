@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { UNIT_VH, isMobile, prefersReducedMotion } from "@/lib/stage";
-import { registerSteps } from "@/lib/steps";
 import { Mark } from "../ui/Logo";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -126,7 +125,7 @@ export default function Showcase() {
       gsap
         .timeline({
           defaults: { ease: "none" },
-          scrollTrigger: { trigger: el, start: "top 85%", end: "top top", scrub: reduce ? true : 0.35 },
+          scrollTrigger: { trigger: el, start: "top 85%", end: "top top", scrub: true },
         })
         .from(q(".sc__head .line > span"), { yPercent: 115, stagger: 0.1, duration: 0.6, ease: "power3.out" }, 0)
         .from(q(".sc__head p, .sc__head .eyebrow, .sc__meta"), { autoAlpha: 0, y: 20, stagger: 0.06, duration: 0.5 }, 0.1)
@@ -150,7 +149,7 @@ export default function Showcase() {
           start: "top top",
           end: () => `+=${innerHeight * units * UNIT_VH * 1.4}`,
           pin: true,
-          scrub: reduce ? true : 0.35,
+          scrub: true,
           invalidateOnRefresh: true,
         },
       });
@@ -159,15 +158,6 @@ export default function Showcase() {
         { duration: 0.6 },
       );
       layout(0);
-
-      // guided scroll: one gesture = one service card
-      const unstep = registerSteps("showcase", () => {
-        const st = tl.scrollTrigger!;
-        const at = (t: number) => st.start + ((st.end - st.start) * t) / tl.duration();
-        return [st.start, ...Array.from({ length: n }, (_, i) => at(HOLD + i * PER)), st.end].filter(
-          (v, i, a) => i === 0 || v - a[i - 1] > 4,
-        );
-      });
 
       // arrows jump to a slide's scroll position
       const go = (dir: number) => {
@@ -197,7 +187,6 @@ export default function Showcase() {
         next.removeEventListener("click", onNext);
         el.removeEventListener("pointermove", onMove);
         demos.forEach((d) => d.kill());
-        unstep();
       };
     }, el);
     return () => ctx.revert();

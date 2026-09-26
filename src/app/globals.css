@@ -2924,6 +2924,8 @@ body {
   width: 100%;
   height: 100%;
   display: block;
+  /* it fades out but stays in place (see Journey): never let it catch clicks meant for the hero */
+  pointer-events: none;
 }
 /* until WebGL paints (or if it can't), the same stage in CSS: brand red with the flat mark */
 .jr__logo3d:not(.is-ready) {

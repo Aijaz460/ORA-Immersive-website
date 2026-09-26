@@ -5,7 +5,6 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import { applyPhoneScale, prefersReducedMotion } from "@/lib/stage";
-import { installStepper } from "@/lib/steps";
 import Header from "./Header";
 import Journey from "./scenes/Journey";
 import Arrival from "./scenes/Arrival";
@@ -27,8 +26,6 @@ export default function Site() {
 
     // ---------- smooth scroll ----------
     const lenis = reduce ? null : new Lenis({ lerp: 0.1, wheelMultiplier: 1, touchMultiplier: 1.4, smoothWheel: true, syncTouch: false });
-    // inside the pinned stories every gesture glides to the next beat (see lib/steps)
-    const uninstallStepper = lenis ? installStepper(lenis) : null;
     const raf = (t: number) => lenis?.raf(t * 1000);
     if (lenis) {
       lenis.on("scroll", ScrollTrigger.update);
@@ -204,7 +201,6 @@ export default function Site() {
       removeEventListener("scroll", queueHeader);
       if (lenis) {
         gsap.ticker.remove(raf);
-        uninstallStepper?.();
         lenis.destroy();
       }
     };

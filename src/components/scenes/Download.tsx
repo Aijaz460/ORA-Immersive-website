@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { UNIT_VH, applyPhoneScale, isMobile, prefersReducedMotion } from "@/lib/stage";
+import { UNIT_VH, applyPhoneScale, isMobile } from "@/lib/stage";
 import { SERVICES } from "@/lib/services";
 import Phone from "../ui/Phone";
 import Lines from "../ui/Lines";
@@ -39,13 +39,12 @@ export default function Download() {
     applyPhoneScale();
     const el = root.current!;
     const q = gsap.utils.selector(el);
-    const reduce = prefersReducedMotion();
 
     const ctx = gsap.context(() => {
       const spread = () => (isMobile() ? 0.55 : 1);
       // copy reveals while the section scrolls in, so it never arrives as an empty red frame
       gsap
-        .timeline({ scrollTrigger: { trigger: el, start: "top 75%", end: "top 10%", scrub: reduce ? true : 0.35 } })
+        .timeline({ scrollTrigger: { trigger: el, start: "top 75%", end: "top 10%", scrub: true } })
         .from(q(".dl__copy .line > span"), { yPercent: 115, stagger: 0.1, duration: 0.8, ease: "power3.out" }, 0)
         .from(
           q(".dl__copy p, .dl__copy .eyebrow, .dl__stores > *, .dl__meta"),
@@ -61,7 +60,7 @@ export default function Download() {
             start: "top top",
             end: () => `+=${innerHeight * units * UNIT_VH}`,
             pin: true,
-            scrub: reduce ? true : 0.35,
+            scrub: true,
             invalidateOnRefresh: true,
           },
         })
