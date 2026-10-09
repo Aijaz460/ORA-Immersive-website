@@ -1,0 +1,604 @@
+/* ===== Variant 2 only. Every rule here is scoped to v2- classes; Variant 1 never renders them. ===== */
+
+/* ---------- communities carousel over the descent ---------- */
+.v2-clients {
+  position: absolute;
+  z-index: 8;
+  left: 0;
+  right: 0;
+  bottom: clamp(28px, 6vh, 64px);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding-left: var(--gutter);
+  pointer-events: none;
+  visibility: hidden;
+}
+.v2-clients__label {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--cream);
+  z-index: 1;
+}
+.v2-clients__label svg {
+  width: 12px;
+  height: 12px;
+  color: var(--yellow-light);
+}
+.v2-clients__rail {
+  flex: 1;
+  overflow: hidden;
+  /* names fade in and out at both ends of the rail */
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 82%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 82%, transparent);
+}
+.v2-clients__track {
+  display: flex;
+  align-items: center;
+  gap: clamp(28px, 3.4vw, 56px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  width: max-content;
+  will-change: transform;
+}
+.v2-clients__track li {
+  display: inline-flex;
+  align-items: center;
+  gap: clamp(28px, 3.4vw, 56px);
+  font-family: var(--font-d);
+  font-size: clamp(22px, 2.3vw, 36px);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  color: var(--cream);
+  text-shadow: 0 2px 24px rgba(20, 8, 4, 0.55);
+}
+.v2-clients__track li svg {
+  width: 14px;
+  height: 14px;
+  color: var(--yellow-light);
+  opacity: 0.9;
+}
+@media (max-width: 860px) {
+  .v2-clients {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding-left: 0;
+  }
+  .v2-clients__label {
+    margin-left: var(--gutter);
+  }
+  .v2-clients__rail {
+    width: 100%;
+  }
+}
+
+/* ---------- the Ora Academy + certified ---------- */
+.v2-ac {
+  position: relative;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 70% 40%, rgba(252, 221, 161, 0.35), transparent 60%),
+    var(--beige);
+  color: var(--red-dark);
+}
+.v2-ac em {
+  font-style: italic;
+  color: var(--accent);
+}
+.v2-ac__intro {
+  position: absolute;
+  z-index: 2;
+  left: var(--gutter);
+  top: 50%;
+  transform: translateY(-50%);
+  max-width: min(46vw, 620px);
+  display: grid;
+  gap: 22px;
+}
+.v2-ac__intro h2 {
+  margin: 0;
+  font-size: clamp(44px, 6.2vw, 96px);
+}
+.v2-ac__intro p {
+  margin: 0;
+  max-width: 44ch;
+  font-size: clamp(15px, 1.15vw, 18px);
+  line-height: 1.6;
+  opacity: 0.78;
+}
+.v2-ac__frame {
+  position: absolute;
+  z-index: 1;
+  overflow: hidden;
+  background: #d9c3a5;
+  box-shadow: 0 40px 90px -40px rgba(71, 21, 15, 0.55);
+  visibility: hidden;
+}
+.v2-ac__shot {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  overflow: hidden;
+  /* a warm stand-in until the film paints */
+  background: linear-gradient(160deg, #e8d3b4, #b98c6a);
+}
+.v2-ac__shot img,
+.v2-ac__shot video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  will-change: transform;
+}
+.v2-ac__shot::after {
+  /* a soft floor so white uniforms never glare against the copy */
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 30%;
+  background: linear-gradient(transparent, rgba(30, 10, 6, 0.28));
+}
+.v2-ac__steps {
+  position: absolute;
+  z-index: 2;
+  left: var(--gutter);
+  top: 50%;
+  transform: translateY(-50%);
+  width: min(30vw, 420px);
+  height: 52vh;
+}
+.v2-ac__step {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  display: grid;
+  gap: 18px;
+}
+.v2-ac__step h3 {
+  margin: 0;
+  font-size: clamp(34px, 3.6vw, 58px);
+}
+.v2-ac__step p {
+  margin: 0;
+  font-size: clamp(15px, 1.1vw, 17px);
+  line-height: 1.6;
+  opacity: 0.78;
+  max-width: 36ch;
+}
+.v2-ac__rail {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  display: flex;
+  gap: 10px;
+  visibility: hidden;
+}
+.v2-ac__rail i {
+  position: relative;
+  width: 46px;
+  height: 2px;
+  background: var(--line);
+  overflow: visible;
+}
+.v2-ac__rail i::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--red-dark);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.5s var(--ease-out);
+}
+.v2-ac__rail i.is-on::before {
+  transform: scaleX(1);
+}
+.v2-ac__rail b {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  opacity: 0.55;
+}
+.v2-ac__cert {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 14px;
+  pointer-events: none;
+}
+.v2-ac__seal {
+  position: relative;
+  width: clamp(150px, 15vw, 210px);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #6f281c, var(--red-dark) 60%, #2a0b07);
+  color: var(--yellow-light);
+  box-shadow:
+    0 30px 70px -24px rgba(71, 21, 15, 0.6),
+    inset 0 0 0 6px rgba(252, 221, 161, 0.12);
+  visibility: hidden;
+}
+.v2-ac__ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: var(--yellow-light);
+  font-family: var(--font-b);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.26em;
+}
+.v2-ac__seal-mark {
+  width: 34%;
+  height: 34%;
+  color: var(--yellow-light);
+}
+.v2-ac__cert h3 {
+  margin: 10px 0 0;
+  font-size: clamp(40px, 4.4vw, 72px);
+}
+.v2-ac__cert p {
+  margin: 0;
+  font-size: 16px;
+  opacity: 0.75;
+}
+.v2-ac__badge {
+  position: absolute;
+  left: 50%;
+  top: 34%;
+  translate: -50% -50%;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-radius: 999px;
+  white-space: nowrap;
+  font-size: 14px;
+  color: var(--red-dark);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.4));
+  border-color: rgba(255, 255, 255, 0.8);
+  visibility: hidden;
+}
+.v2-ac__badge i {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-style: normal;
+  font-size: 11px;
+  color: #fff;
+  background: var(--green-dark);
+}
+@media (max-width: 860px) {
+  .v2-ac__intro {
+    max-width: none;
+    right: var(--gutter);
+    top: auto;
+    bottom: 10vh;
+    transform: none;
+  }
+  .v2-ac__steps {
+    width: auto;
+    right: var(--gutter);
+    top: 60vh;
+    transform: none;
+    height: 34vh;
+  }
+  .v2-ac__step h3 {
+    font-size: 30px;
+  }
+  .v2-ac__badge {
+    font-size: 12px;
+    padding: 10px 14px;
+  }
+}
+
+/* ---------- chapter 07: the van stage ---------- */
+/* Variant 2 technician photos (card + in-phone slice) */
+.v2-jr div.jr__techcard {
+  background-image: url("/v2/img/tech-card.webp");
+}
+.v2-jr .jr__techphoto {
+  background-image: url("/v2/img/tech-phone.webp");
+}
+
+/* ---------- the route: his van on the community plan ---------- */
+.v2-route {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  overflow: hidden;
+  background: linear-gradient(#f9ecd4, #f4e6cc 40%);
+  perspective: 1400px;
+  visibility: hidden;
+  pointer-events: none;
+}
+.v2-route__plane {
+  position: absolute;
+  left: -20%;
+  right: -20%;
+  top: -10%;
+  bottom: -30%;
+  transform-origin: 50% 62%;
+  will-change: transform;
+}
+.v2-route__plane svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.v2-route__home-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.v2-route__fog {
+  /* the far edge of the tilted plan fades into the warm haze, like the horizon in the film */
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(#f9ecd4 0%, rgba(249, 236, 212, 0.85) 14%, rgba(249, 236, 212, 0) 42%),
+    radial-gradient(120% 90% at 50% 70%, transparent 55%, rgba(71, 21, 15, 0.12));
+}
+.v2-route__eta {
+  position: absolute;
+  right: var(--gutter);
+  top: clamp(96px, 14vh, 140px);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 20px 14px 14px;
+  border-radius: 22px;
+  color: var(--red-dark);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.55));
+  border-color: rgba(255, 255, 255, 0.9);
+  visibility: hidden;
+}
+.v2-route__eta-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--red-dark);
+  color: var(--yellow-light);
+}
+.v2-route__eta-icon svg {
+  width: 20px;
+  height: 20px;
+}
+.v2-route__eta > span:last-child {
+  display: grid;
+  gap: 2px;
+}
+.v2-route__eta small {
+  font-size: 12px;
+  opacity: 0.75;
+}
+.v2-route__eta strong {
+  position: relative;
+  font-family: var(--font-d);
+  font-size: 22px;
+  font-weight: 600;
+}
+.v2-route__eta strong b {
+  font-variant-numeric: tabular-nums;
+}
+.v2-route__eta strong i {
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-style: normal;
+  white-space: nowrap;
+  color: #2f5a26;
+  visibility: hidden;
+}
+.v2-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #2f5a26;
+}
+.v2-live::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: v2-live 1.6s ease-in-out infinite;
+}
+@keyframes v2-live {
+  50% {
+    opacity: 0.25;
+  }
+}
+@media (max-width: 860px) {
+  .v2-route__eta {
+    top: auto;
+    bottom: 3vh;
+    right: auto;
+    left: var(--gutter);
+  }
+}
+/* the film canvas paints the new opening frame until the sequence decodes */
+.v2-jr .jr__canvas {
+  background-image: url("/v2/img/aerial-poster.webp");
+}
+/* the chapter card stays over the route */
+.v2-jr .jr__app-ui {
+  z-index: 4;
+}
+
+/* ---------- chapter 07: one rendered scene on its own warm stage (van, road, two lamps, him) ---------- */
+.v2-stage {
+  /* the scene's own sand backdrop; the footage is rendered on this colour, so its edges disappear */
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #c8ae93 0%, #d3bca3 48%, #cbb59c 100%); /* sampled from the footage */
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.v2-stage__box {
+  /* 16:9, always covering the viewport (the film's own maths): % positions inside stay exact */
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100vw, calc(100svh * 16 / 9));
+  aspect-ratio: 16 / 9;
+  transform: translate(-50%, -50%);
+}
+.v2-stage__cv {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  visibility: hidden;
+}
+.v2-stage .jr__notif {
+  /* beside him, as the phone comes out */
+  left: 57%;
+  top: 18%;
+  width: min(330px, 21%);
+}
+@media (max-width: 860px) {
+  .v2-stage__box {
+    /* phones: the whole scene, full width, along the bottom; its top edge melts into the stage */
+    left: 0;
+    top: auto;
+    bottom: 6vh;
+    width: 100vw;
+    transform: none;
+  }
+  .v2-stage__cv {
+    -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 18%);
+    mask-image: linear-gradient(180deg, transparent 0, #000 18%);
+  }
+  .v2-stage .jr__notif {
+    left: 18%;
+    top: auto;
+    bottom: 104%;
+    width: 64%;
+  }
+}
+
+
+
+/* ---------- the app starting on his phone: the Ora splash and the star you zoom through ---------- */
+.jr__fs-zoom {
+  /* the splash on his screen, redrawn while you zoom into its star */
+  position: absolute;
+  inset: 0;
+  width: 412px;
+  height: 910px;
+  visibility: hidden;
+}
+.jr__hole {
+  /* the star's centre filling the view; a circle opens in it onto Step 01 */
+  --r: 0vmax;
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  background: #46150f;
+  visibility: hidden;
+  pointer-events: none;
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent var(--r), #000 calc(var(--r) + 1px));
+  mask-image: radial-gradient(circle at 50% 50%, transparent var(--r), #000 calc(var(--r) + 1px));
+}
+.jr__splash {
+  overflow: hidden;
+  will-change: auto;
+  background: #46150f; /* the splash's own maroon: what the star's centre opens onto */
+}
+.jr__splash img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.jr__splash-cv {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* the walkthrough's section title, held top-left through Steps 01–07 (placed and sized in JS) */
+.v2-jr .v2-lefthead {
+  position: absolute;
+  left: var(--gutter);
+  margin: 0;
+  max-width: min(640px, 40vw);
+  font-size: clamp(44px, min(5.6vw, 9vh), 104px);
+  line-height: 0.98;
+  letter-spacing: -0.01em;
+  color: var(--red-dark);
+  pointer-events: none;
+}
+.v2-jr .v2-lefthead__l {
+  display: block;
+  width: max-content;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+}
+/* one solid brand colour, a soft light halo for contrast on any tint */
+.v2-jr .v2-lefthead {
+  text-shadow: 0 1px 24px rgba(253, 244, 226, 0.45);
+}
+
+@media (max-width: 860px) {
+  .v2-jr .v2-lefthead {
+    display: none;
+  }
+}
+
+/* ---------- Arrival: the lock-screen notifications, one size, stacked like iOS ---------- */
+.ar--v2 .ar__note {
+  /* both cards: same three single-line rows, so they are the same size and line up exactly */
+  grid-template-rows: auto auto auto;
+  gap: 1.2cqw;
+  padding: 4.2cqw 5cqw 4.6cqw;
+  background: rgb(253, 244, 226);
+}
+.ar--v2 .ar__note > * {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.ar--v2 .ar__note b {
+  font-size: 5.6cqw;
+  line-height: 1.2;
+}
+.ar--v2 .ar__note > span:last-child {
+  font-size: 4.5cqw;
+  line-height: 1.3;
+}
+.ar--v2 .ar__note--1 {
+  z-index: 1;
+}

@@ -1,0 +1,11 @@
+{
+  "name": "ora-audit",
+  "private": true,
+  "type": "module",
+  "description": "Real-browser checks for the Ora site: frame pacing, accessibility, scroll pace, frame-by-frame captures",
+  "dependencies": {
+    "axe-core": "4.10.2",
+    "pngjs": "^7.0.0",
+    "puppeteer-core": "^23.11.1"
+  }
+}
