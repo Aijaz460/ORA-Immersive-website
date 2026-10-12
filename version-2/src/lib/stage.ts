@@ -6,7 +6,9 @@ export const APP_H = 910;
 export const BEZEL = 11;
 export const UNIT_VH = 0.3; // scroll length per timeline unit, as a fraction of viewport height
 
-export const isMobile = () => innerWidth < MOBILE;
+// phone layout: narrow screens, plus portrait screens wider than a phone when the page opts in with
+// html.compact (Variant 2 does, for tablets and narrow windows)
+export const isMobile = () => innerWidth < MOBILE || document.documentElement.classList.contains("compact");
 
 export const prefersReducedMotion = () =>
   typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;

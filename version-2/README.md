@@ -74,13 +74,22 @@ so it never stretches.
 
 ---
 
+### Phones and tablets
+
+Nothing is hidden on small screens; everything is re-placed. `isMobile()` (`src/lib/stage.ts`) is true below
+860px wide, or when `html.compact` is set (portrait touch screens up to 1200px wide). Desktop layout never
+depends on phone rules.
+
+---
+
 ## Assets
 
 | Script | Rebuilds |
 | --- | --- |
 | `scripts/v2_date_screens.py` | The Plumbing date screen (hand refitted above the glass card) from 2× Figma exports |
 | `scripts/v2_confirm_screens.py` | The confirmation screen, with the technician thumbnail cut from the Step 06 photo |
-| `scripts/v2_academy_videos.py` | Academy films for Steps 01, 02, 03 and 05 from the supplied clips (`../Ora_videos/step{n}.mp4`); video streams are copied untouched, or a 2K master is used where one exists |
+| `scripts/v2_academy_videos.py` | Academy films for all five steps from the supplied clips (`../Ora_videos/step{n}.mp4`); video streams are copied untouched, or a 2K master is used where one exists |
+| `scripts/v2_compact_css.py` | `src/v2/compact.css`: every phone rule mirrored under `html.compact`, so portrait tablets get the phone layout. Re-run after editing phone CSS in `v2.css` |
 | `scripts/artifact_v2.py` | A one-folder static bundle of the whole page (`artifact-v2/`) |
 
 ```bash

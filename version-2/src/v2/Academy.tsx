@@ -41,7 +41,7 @@ const STEPS = [
     tag: "Conduct & safety",
     title: "Respect for your home.",
     body: "Shoe covers, dust sheets, clear explanations and a tidy finish. Every visit, every home.",
-    alt: "A technician laying a protective sheet before starting work",
+    alt: "A technician in shoe covers walking in over a protective floor sheet",
   },
   {
     k: "05",
@@ -78,6 +78,14 @@ export default function Academy() {
         isMobile()
           ? { left: "4vw", top: "10vh", width: "92vw", height: "46vh", borderRadius: 24 }
           : { left: "38vw", top: "9vh", width: "58vw", height: "82vh", borderRadius: 32 };
+      // ...and at rest beside the promise (phones: in the space above it, never over the text)
+      const intro = q<HTMLElement>(".v2-ac__intro")[0];
+      const rest = () => {
+        if (!isMobile()) return { left: "58vw", top: "30vh", width: "30vw", height: "46vh" };
+        const top = Math.max(88, innerHeight * 0.12); // below the site header
+        const bottom = intro.offsetTop - 24;
+        return { left: "8vw", top, width: "84vw", height: Math.max(120, bottom - top) };
+      };
       gsap.set(shots.slice(1), { clipPath: "inset(100% 0% 0% 0%)" });
       // each stage is a short, calm film of the training itself (a seamless loop); only the one on screen plays
       const vids = q<HTMLVideoElement>(".v2-ac__shot video");
@@ -124,7 +132,7 @@ export default function Academy() {
         .from(q(".v2-ac__intro .eyebrow, .v2-ac__intro p"), { autoAlpha: 0, y: 20, duration: 0.7, stagger: 0.1 }, 0.2)
         .fromTo(
           frame,
-          { left: "58vw", top: "30vh", width: "30vw", height: "46vh", borderRadius: 28, y: 80, autoAlpha: 0 },
+          { ...rest(), borderRadius: 28, y: 80, autoAlpha: 0 },
           { y: 0, autoAlpha: 1, duration: 1.2, ease: "power3.out" },
           0.3,
         )
@@ -159,14 +167,21 @@ export default function Academy() {
         .fromTo(q(".v2-ac__ring"), { rotate: -120 }, { rotate: 60, duration: 4 }, c + 0.4)
         .from(q(".v2-ac__cert .line > span"), { yPercent: 115, stagger: 0.1, duration: 0.8, ease: "power3.out" }, c + 0.9)
         .from(q(".v2-ac__cert p"), { autoAlpha: 0, y: 16, duration: 0.6 }, c + 1.1);
+      // phones/tablets: centred by GSAP (it folds a CSS translate into its transform unevenly); desktop
+      // keeps its original centring untouched
+      if (isMobile()) gsap.set(q(".v2-ac__badge"), { xPercent: -50, yPercent: -50 });
       q<HTMLElement>(".v2-ac__badge").forEach((b, i) => {
         tl.fromTo(
           b,
           { autoAlpha: 0, x: 0, y: 0, scale: 0.6 },
           {
             autoAlpha: 1,
-            x: () => Number(b.dataset.x) * (isMobile() ? innerWidth * 0.26 : Math.min(innerWidth * 0.3, 420)),
-            y: () => Number(b.dataset.y) * (isMobile() ? innerHeight * 0.3 : Math.min(innerHeight * 0.34, 300)),
+            // phones: no room beside the seal, so they stack, centred: two above it, two below the copy
+            x: () => (isMobile() ? 0 : Number(b.dataset.x) * Math.min(innerWidth * 0.3, 420)),
+            y: () =>
+              isMobile()
+                ? [-0.19, -0.115, 0.38, 0.455][i] * innerHeight
+                : Number(b.dataset.y) * Math.min(innerHeight * 0.34, 300),
             scale: 1,
             duration: 1,
             ease: "expo.out",

@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
-import { applyPhoneScale, prefersReducedMotion } from "@/lib/stage";
+import { APP_H, BEZEL, applyPhoneScale, isMobile, phoneScale, prefersReducedMotion } from "@/lib/stage";
 import Header from "@/components/Header";
 import Journey from "./JourneyV2";
 import Arrival from "./ArrivalV2";
@@ -12,14 +12,61 @@ import Showcase from "@/components/scenes/Showcase";
 import Features from "./FeaturesV2";
 import Download from "@/components/scenes/Download";
 import Footer from "@/components/Footer";
+import { Mark } from "@/components/ui/Logo";
 import Academy from "./Academy";
 import "./v2.css";
+import "./compact.css";
+
+// Portrait touch screens wider than a phone (tablets) get the phone layout: html.compact mirrors
+// every phone rule (src/v2/compact.css, generated) and makes isMobile() true. Set at load, before any
+// section measures itself, and kept current on resize (ScrollTrigger then rebuilds the scenes).
+const COMPACT_MAX = 1200;
+const applyCompact = () =>
+  document.documentElement.classList.toggle(
+    "compact",
+    innerWidth >= 860 &&
+      innerWidth <= COMPACT_MAX &&
+      innerHeight > innerWidth &&
+      matchMedia("(pointer: coarse)").matches, // touch screens only: desktop windows keep the desktop layout
+  );
+if (typeof window !== "undefined") {
+  applyCompact();
+  addEventListener("resize", applyCompact);
+}
 
 gsap.registerPlugin(ScrollTrigger);
+
+// Download on phones: the three phones sit in the space left between the copy (shown in full) and the
+// scrolling band at the bottom, scaled down if that space is short (a phone scale on the section only)
+const placeDownload = () => {
+  const dl = document.getElementById("download");
+  if (!dl) return;
+  dl.style.removeProperty("--s");
+  dl.style.removeProperty("--dl-cy");
+  if (!isMobile()) return;
+  const copy = dl.querySelector<HTMLElement>(".dl__copy");
+  const band = dl.querySelector<HTMLElement>(".dl__marquee");
+  if (!copy || !band) return;
+  // the phones are centred on the group's anchor, which lifts 40px at the end of the scroll; the centre
+  // phone floats ±10px, the side phones sit 6vh lower and their tilt reaches about 8% further
+  const top = copy.offsetTop + copy.offsetHeight + 20;
+  const floor = band.offsetTop - 8;
+  const room = floor - top;
+  const hFull = (APP_H + 2 * BEZEL) * phoneScale() * 0.88;
+  const span = (h: number) => h * 1.04 + innerHeight * 0.06 + 18;
+  let h = hFull;
+  if (span(h) > room) {
+    h = (room - innerHeight * 0.06 - 18) / 1.04;
+    dl.style.setProperty("--s", String((phoneScale() * h) / hFull));
+  }
+  dl.style.setProperty("--dl-cy", `${top + 40 + h / 2 + 10 + Math.max(0, room - span(h)) / 2}px`);
+};
 
 export default function SiteV2() {
   const pre = useRef<HTMLDivElement>(null);
   const cursor = useRef<HTMLDivElement>(null);
+  const toTop = useRef<HTMLButtonElement>(null);
+  const veil = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const reduce = prefersReducedMotion();
@@ -28,7 +75,9 @@ export default function SiteV2() {
     if ("scrollRestoration" in history) history.scrollRestoration = "manual";
     scrollTo(0, 0);
     applyPhoneScale();
+    placeDownload();
     ScrollTrigger.addEventListener("refreshInit", applyPhoneScale);
+    ScrollTrigger.addEventListener("refreshInit", placeDownload);
 
     // ---------- smooth scroll ----------
     const lenis = reduce ? null : new Lenis({ lerp: 0.1, wheelMultiplier: 1, touchMultiplier: 1.4, smoothWheel: true, syncTouch: false });
@@ -55,6 +104,40 @@ export default function SiteV2() {
       else scrollTo(0, y);
     };
     addEventListener("ora:scrollto", onScrollTo);
+
+    // back to top: past the opening a seal-style button appears; it fades the page to cream, jumps to the
+    // top (a smooth scroll would replay the whole story in reverse) and fades back in on the opening
+    // it appears once you are through the clouds and into the community (the flight), and its star turns
+    // as you scroll, like the mark in the header
+    const top = toTop.current!;
+    const star = top.querySelector<SVGElement>(".totop__star")!;
+    const showTop = () => {
+      const j = (window as unknown as { __oraJourney?: gsap.core.Timeline; __oraSeekY?: (t: number) => number });
+      const from = j.__oraJourney && j.__oraSeekY ? j.__oraSeekY(j.__oraJourney.labels.fly) : innerHeight * 1.5;
+      top.classList.toggle("is-on", scrollY > from);
+      gsap.set(star, { rotation: scrollY * 0.12 });
+    };
+    const goTop = () => {
+      const v = veil.current!;
+      top.classList.add("is-going"); // the arrow shoots up, the star spins
+      gsap.fromTo(star, { rotation: "+=0" }, { rotation: "+=270", duration: 0.5, ease: "back.out(2)" });
+      gsap.to(v, {
+        autoAlpha: 1,
+        duration: 0.28,
+        ease: "power1.in",
+        onComplete: () => {
+          if (lenis) lenis.scrollTo(0, { immediate: true, force: true });
+          else scrollTo(0, 0);
+          ScrollTrigger.update();
+          requestAnimationFrame(() => gsap.to(v, { autoAlpha: 0, duration: 0.5, delay: 0.1, ease: "power1.out" }));
+          top.classList.remove("is-going");
+        },
+      });
+    };
+    top.addEventListener("click", goTop);
+    addEventListener("scroll", showTop, { passive: true });
+    lenis?.on("scroll", showTop);
+    showTop();
 
     // ---------- preloader: the app's own launch animation (Figma "Launch Animation") ----------
     const p = pre.current!;
@@ -177,6 +260,12 @@ export default function SiteV2() {
       header.classList.toggle("is-light", !overSky && sec?.dataset.header === "light");
       // plain text at the very top; a white glass capsule once the page moves
       header.classList.toggle("is-scrolled", scrollY > 40);
+      // the logo zoom plays on its own: the header arrives with the hero headline
+      const j = window as unknown as { __oraJourney?: { labels: Record<string, number> }; __oraSeekY?: (t: number) => number };
+      const through = j.__oraJourney && j.__oraSeekY ? j.__oraSeekY(j.__oraJourney.labels.hero) : innerHeight * 0.5;
+      const away = scrollY < through;
+      header.classList.toggle("is-away", away);
+      if (away) header.classList.remove("is-open");
     };
     const queueHeader = () => {
       if (headerQueued) return;
@@ -193,8 +282,11 @@ export default function SiteV2() {
 
     return () => {
       ScrollTrigger.removeEventListener("refreshInit", applyPhoneScale);
+      ScrollTrigger.removeEventListener("refreshInit", placeDownload);
       document.removeEventListener("click", onAnchor);
       removeEventListener("ora:scrollto", onScrollTo);
+      top.removeEventListener("click", goTop);
+      removeEventListener("scroll", showTop);
       removeEventListener("ora:progress", onProgress);
       removeEventListener("ora:hero-ready", onHeroReady);
       removeEventListener("load", refresh);
@@ -229,8 +321,8 @@ export default function SiteV2() {
         </div>
       </div>
 
-      <Header />
-      <main>
+      <Header menu />
+      <main className="v2-site">
         {/* one persistent page title for assistive tech; the hero's display line animates away */}
         <h1 className="sr-only">Ora: in-house home maintenance in Dubai, booked in three taps</h1>
         <Journey />
@@ -242,6 +334,15 @@ export default function SiteV2() {
         <Download screens={{ l: "splash-b", r: "confirmed", c: "home" }} />
       </main>
       <Footer />
+
+      {/* back to top, in the Ora seal's colours */}
+      <button type="button" className="totop" ref={toTop} aria-label="Back to top">
+        <svg className="totop__arrow" viewBox="0 0 24 14" aria-hidden>
+          <path d="M5 10 12 3l7 7" />
+        </svg>
+        <Mark className="totop__star" />
+      </button>
+      <div className="totop-veil" ref={veil} aria-hidden />
 
       <div className="grain" aria-hidden />
       <div className="cursor" ref={cursor} aria-hidden>

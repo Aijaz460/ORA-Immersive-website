@@ -148,6 +148,15 @@ const PUFFS = [
   { n: 6, x: 58, y: 30, w: 22, d: 0.5 },
 ];
 
+// Step 01 on phones (same tile order): three either side of the device, evenly spaced down its height
+const MOBILE_TILE = [
+  { side: 1, y: -0.02 }, // Cleaning
+  { side: 1, y: -0.32 }, // AC & Mechanical
+  { side: -1, y: -0.32 }, // Electrical
+  { side: 1, y: 0.28 }, // Pest Control
+  { side: -1, y: -0.02 }, // Handyman
+  { side: -1, y: 0.28 }, // Water Tank
+];
 // the nine services' tools around the device in Step 01: four to the right, two to the left below the
 // chapter card (the section title holds the space above it)
 const TILES = [
@@ -394,9 +403,40 @@ export default function JourneyV2() {
       // the section title stays in one place through all seven steps: above the highest of the step cards,
       // below the site header, and clear of the device (and Step 04's photo card) across
       const heads = q<HTMLElement>(".v2-lefthead");
+      // Step 06's numbers count up with the scroll (state.count 0 → 1)
+      const paintCounts = () =>
+        q<HTMLElement>("[data-count]").forEach(
+          (n) => (n.textContent = (Number(n.dataset.count) * state.count).toFixed(Number(n.dataset.dec || 0))),
+        );
+      let mobileCy = 0; // phones: the device's centre, set by placeHeads in the space below the step cards
+      // the phone scale this section uses (its own --s on short phones, else the site-wide one)
+      const storyScale = () =>
+        parseFloat(getComputedStyle(root.current ?? document.documentElement).getPropertyValue("--s")) || phoneScale();
       const placeHeads = () => {
         const h = heads[0];
         if (!h) return;
+        if (isMobile()) {
+          // phones: the title is one line under the header (CSS), the step card below it shows its whole
+          // text, and the device sits in the space that is left, below the tallest card, above the dots
+          h.style.bottom = "";
+          h.style.fontSize = "";
+          h.style.display = "";
+          const cardBottom = Math.max(...chapters.map((c) => c.offsetTop + c.offsetHeight));
+          const top = cardBottom + 18;
+          const floor = innerHeight - 44;
+          // short phones: the device scales down until it fits between the cards and the dots (the scale is
+          // set on this section only, so the site-wide phone scale and the other sections are untouched)
+          applyPhoneScale();
+          root.current?.style.removeProperty("--s");
+          const ph = q<HTMLElement>(".jr__phone .phone")[0].offsetHeight;
+          if (ph > floor - top) root.current?.style.setProperty("--s", String((phoneScale() * (floor - top)) / ph));
+          mobileCy = (top + floor) / 2;
+          root.current?.style.setProperty("--phone-cy", `${mobileCy}px`);
+          return;
+        }
+        mobileCy = 0;
+        root.current?.style.removeProperty("--phone-cy");
+        root.current?.style.removeProperty("--s");
         const ui = q<HTMLElement>(".jr__app-ui")[0].getBoundingClientRect();
         const top = Math.min(
           ...chapters.map((c) => c.getBoundingClientRect().top - (Number(gsap.getProperty(c, "y")) || 0)),
@@ -410,16 +450,15 @@ export default function JourneyV2() {
         // his photo card, at the size it settles to (it may be mid-animation when this runs)
         const tc = techCard.getBoundingClientRect();
         const k = Number(gsap.getProperty(techCard, "scale")) || TECH_Z;
-        const stop =
-          Math.min(
-            q<HTMLElement>(".jr__phone .phone")[0].getBoundingClientRect().left,
-            tc.left + tc.width / 2 - ((tc.width / k) * TECH_Z) / 2,
-          ) - 32;
+        const phoneLeft = q<HTMLElement>(".jr__phone .phone")[0].getBoundingClientRect().left - 32;
+        const cardLeft = tc.left + tc.width / 2 - ((tc.width / k) * TECH_Z) / 2 - 32;
         const hl = h.getBoundingClientRect().left;
         const widest = Math.max(...[...h.querySelectorAll<HTMLElement>(".v2-lefthead__l")].map((l) => l.scrollWidth));
-        if (widest > stop - hl) size *= (stop - hl) / widest;
+        const fit = (stop: number) => (widest > stop - hl ? (size * (stop - hl)) / widest : size);
+        // clear of his photo card too where that still leaves a readable title; never hidden on desktop
+        size = fit(Math.min(phoneLeft, cardLeft)) >= 30 ? fit(Math.min(phoneLeft, cardLeft)) : fit(phoneLeft);
         h.style.fontSize = `${size}px`;
-        h.style.display = size < 30 ? "none" : "";
+        h.style.display = "";
       };
       placeHeads();
       addEventListener("resize", placeHeads);
@@ -505,9 +544,9 @@ export default function JourneyV2() {
         };
       };
       const phoneCx = () => innerWidth * (isMobile() ? 0.5 : 0.6);
-      const phoneCy = () => innerHeight * (isMobile() ? 0.6 : 0.52);
-      const glassW = () => APP_W * phoneScale();
-      const glassH = () => APP_H * phoneScale();
+      const phoneCy = () => (isMobile() && mobileCy ? mobileCy : innerHeight * (isMobile() ? 0.6 : 0.52));
+      const glassW = () => APP_W * storyScale();
+      const glassH = () => APP_H * storyScale();
       // scale/offset (and a camera roll, degrees) that puts the film phone's screen centre on the app
       // phone's spot at scale k; the scene's transform origin is its top-left corner
       const frameOn = (k: number, roll = 0) => {
@@ -807,11 +846,29 @@ export default function JourneyV2() {
         const b = box();
         const h = hole();
         const start = s0();
-        const k = start + (1 - start) * fall.k;
-        const z = zoomTo((h.x - b.left) / b.w, (h.y - b.top) / b.h, k);
+        const k0 = start + (1 - start) * fall.k;
+        const c = Math.pow(k0 / start, 1.8); // the clouds rush outward faster than the film grows
+        // ...so the film must always reach past the opening's soft edge, where the clouds only turn fully solid
+        // at ~1.32× the opening (measured from clouds.webp / clouds-m.webp), on each of the four sides
+        // separately (it zooms about the opening, which sits off-centre), or to the screen edge if nearer
+        const px = (h.x - b.left) / b.w;
+        const py = (h.y - b.top) / b.h;
+        const R = 1.38;
+        const rx = (R * h.w * c) / 2;
+        const ry = (R * h.h * c) / 2;
+        const need = Math.min(
+          1,
+          Math.max(
+            Math.min(h.x, rx) / (px * b.w),
+            Math.min(innerWidth - h.x, rx) / ((1 - px) * b.w),
+            Math.min(h.y, ry) / (py * b.h),
+            Math.min(innerHeight - h.y, ry) / ((1 - py) * b.h),
+          ),
+        );
+        const k = Math.max(k0, need);
+        const z = zoomTo(px, py, k);
         gsap.set(scene, { scale: z.scale, x: z.x, y: z.y, force3D: false });
         deck.style.transformOrigin = `${h.x}px ${h.y}px`;
-        const c = Math.pow(k / start, 1.8);
         gsap.set(deck, { scaleX: c, scaleY: c });
       };
       applyFall();
@@ -968,6 +1025,9 @@ export default function JourneyV2() {
         { scale: 1, duration: 0.8, ease: "power3.out" },
         "app+=0.3",
       );
+      // phones/tablets: tiles are centred on their spot by GSAP (it folds a CSS translate into its transform
+      // unevenly); desktop keeps its original centring untouched
+      if (isMobile()) gsap.set(tiles, { xPercent: -50, yPercent: -50 });
       tiles.forEach((t, i) => {
         const d = Number(t.dataset.d);
         tl.fromTo(
@@ -975,8 +1035,15 @@ export default function JourneyV2() {
           { x: 0, y: 0, z: -300, scale: 0.4, autoAlpha: 0 },
           {
             x: () =>
-              Number(t.dataset.x) * glassW() * (isMobile() ? 0.62 : 1.25),
-            y: () => Number(t.dataset.y) * glassH(),
+              // phones: three captioned tiles in the narrow strip either side of the device, evenly spaced
+              isMobile()
+                ? MOBILE_TILE[i].side * (glassW() * 0.527 + (innerWidth - glassW() * 1.054) / 4)
+                : Number(t.dataset.x) * glassW() * 1.25,
+            // phones: rows 0.3 of the screen height apart, but never closer than a tile is tall
+            y: () =>
+              isMobile()
+                ? (MOBILE_TILE[i].y / 0.3) * Math.max(0.3 * glassH(), t.offsetHeight + 8)
+                : Number(t.dataset.y) * glassH(),
             z: 0,
             scale: 1,
             autoAlpha: 1,
@@ -985,7 +1052,7 @@ export default function JourneyV2() {
           },
           `app+=${0.6 + i * 0.1}`,
         );
-        tl.to(t, { y: `-=${50 * d}`, duration: 2.4 }, "app+=1.6");
+        tl.to(t, { y: () => `-=${(isMobile() ? 8 : 50) * d}`, duration: 2.4 }, "app+=1.6");
       });
 
       tl.fromTo(
@@ -1279,13 +1346,7 @@ export default function JourneyV2() {
           count: 1,
           duration: 1,
           ease: "power2.out",
-          onUpdate: () =>
-            q<HTMLElement>("[data-count]").forEach(
-              (n) =>
-                (n.textContent = (
-                  Number(n.dataset.count) * state.count
-                ).toFixed(Number(n.dataset.dec || 0))),
-            ),
+          onUpdate: () => paintCounts(),
         },
         "tech+=1.8",
       ).to(
@@ -1471,6 +1532,14 @@ export default function JourneyV2() {
         const k = gsap.utils.clamp(0, 1, (t - PACE[i - 1][0]) / (PACE[i][0] - PACE[i - 1][0] || 1));
         return cum[i - 1] + (cum[i] - cum[i - 1]) * k;
       };
+      // a refresh (or any jump with events suppressed) returns to the current time with events suppressed, which skips the per-frame
+      // painters (the splash zoom, his photo opening out): re-run them for wherever the story now is
+      const syncFrames = () => {
+        const t = tl.time();
+        paintCounts();
+        if (t >= tl.labels.zoom && t <= tl.labels.open) zoomFrame();
+        avFrame();
+      };
       const progressBar = q(".jr__progress i");
       const st = ScrollTrigger.create({
         trigger: el,
@@ -1480,6 +1549,7 @@ export default function JourneyV2() {
         anticipatePin: 1,
         onUpdate: (self) => {
           tl.time(timeAt(self.progress * TOTAL));
+          syncFrames(); // cheap; keeps the painted frames true to the timeline whatever happened before
           gsap.set(progressBar, { scaleX: self.progress });
         },
       });
@@ -1488,14 +1558,19 @@ export default function JourneyV2() {
         tl.time(0, true);
         tl.invalidate();
       };
-      const onRefresh = () => tl.time(timeAt(st.progress * TOTAL), true);
+      const onRefresh = () => {
+        tl.time(timeAt(st.progress * TOTAL), true);
+        syncFrames();
+      };
       ScrollTrigger.addEventListener("refreshInit", onRefreshInit);
       ScrollTrigger.addEventListener("refresh", onRefresh);
       tl.time(0);
       ScrollTrigger.refresh();
+      syncFrames();
       // audit hook: scripts seek to story moments by label (scroll position of a timeline time)
       Object.assign(window, {
         __oraJourney: tl,
+        __oraSync: syncFrames,
         __oraSeekY: (t: number) => st.start + screensAt(t) * innerHeight,
       });
 

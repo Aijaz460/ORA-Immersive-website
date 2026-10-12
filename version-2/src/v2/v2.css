@@ -487,11 +487,12 @@
 }
 @media (max-width: 860px) {
   .v2-stage__box {
-    /* phones: the whole scene, full width, along the bottom; its top edge melts into the stage */
-    left: 0;
+    /* phones: the scene along the bottom, larger than the screen and framed on the van and him (he
+       still walks in from the right, the van still leaves to the left); its top edge melts into the stage */
+    left: -45vw;
     top: auto;
-    bottom: 6vh;
-    width: 100vw;
+    bottom: 5vh;
+    width: 160vw;
     transform: none;
   }
   .v2-stage__cv {
@@ -499,10 +500,11 @@
     mask-image: linear-gradient(180deg, transparent 0, #000 18%);
   }
   .v2-stage .jr__notif {
-    left: 18%;
+    /* the box is 160vw wide from -45vw: these put the card 6vw in from the screen's edges */
+    left: calc(51 / 160 * 100%);
     top: auto;
     bottom: 104%;
-    width: 64%;
+    width: calc(88 / 160 * 100%);
   }
 }
 
@@ -571,11 +573,7 @@
   text-shadow: 0 1px 24px rgba(253, 244, 226, 0.45);
 }
 
-@media (max-width: 860px) {
-  .v2-jr .v2-lefthead {
-    display: none;
-  }
-}
+
 
 /* ---------- Arrival: the lock-screen notifications, one size, stacked like iOS ---------- */
 .ar--v2 .ar__note {
@@ -601,4 +599,429 @@
 }
 .ar--v2 .ar__note--1 {
   z-index: 1;
+}
+
+/* Step 01 on phones: the six service tools as compact tiles beside the device, each named underneath */
+@media (max-width: 860px) {
+  .v2-jr .jr__tile {
+    scale: 0.82;
+    flex-direction: column;
+    gap: 5px;
+    padding: 6px 6px 8px;
+    border-radius: 16px;
+  }
+  .v2-jr .jr__tile span {
+    /* the service's name, as a small caption under its tool */
+    display: block;
+    max-width: 74px;
+    font-size: 11px;
+    line-height: 1.15;
+    text-align: center;
+    white-space: normal;
+  }
+  .v2-jr .jr__tile:nth-of-type(n + 5) {
+    display: flex;
+  }
+}
+
+/* ---------- phones: every step shows its whole card, under one line of section title ---------- */
+@media (max-width: 860px) {
+  .v2-jr .v2-lefthead {
+    display: block;
+    top: 92px;
+    bottom: auto;
+    right: var(--gutter);
+    max-width: none;
+    font-size: clamp(20px, 6vw, 26px);
+    line-height: 1.1;
+  }
+  .v2-jr .v2-lefthead__l {
+    display: inline;
+  }
+  .v2-jr .v2-lefthead__l + .v2-lefthead__l::before {
+    content: " ";
+  }
+  .v2-jr .jr__chapter {
+    top: 128px;
+  }
+  .v2-jr .jr__chapter h2 {
+    font-size: clamp(24px, 7vw, 30px);
+  }
+  .v2-jr .jr__chapter p {
+    display: block;
+    margin-top: 8px;
+    max-width: none;
+    font-size: 13.5px;
+    line-height: 1.45;
+  }
+  .v2-jr .jr__dots {
+    display: flex;
+    bottom: 20px;
+  }
+  .v2-jr .jr__phone {
+    top: var(--phone-cy, 60%);
+  }
+}
+
+/* Step 01 tiles on phones: centred in GSAP (xPercent/yPercent), not with the shared CSS translate */
+@media (max-width: 860px) {
+  .v2-jr .jr__tile {
+    translate: none;
+  }
+}
+
+/* Step 06 on phones: his four facts as compact cards in the strips either side of the device */
+@media (max-width: 860px) {
+  .v2-jr .jr__qcard--tech {
+    display: grid !important;
+    scale: 1;
+    min-width: 0;
+    width: calc((100vw - 434px * var(--s)) / 2 - 12px);
+    max-width: none;
+    gap: 2px;
+    padding: 9px 9px 10px;
+    border-radius: 14px;
+    font-size: 11px;
+    line-height: 1.25;
+    white-space: normal;
+  }
+  .v2-jr .jr__qcard--tech b {
+    font-size: 17px;
+  }
+  .v2-jr .jr__qcard--tech small {
+    font-size: 7.5px;
+    letter-spacing: 0.03em;
+  }
+  .v2-jr .jr__qcard--tech .stars {
+    font-size: 9px;
+  }
+  .v2-jr .jr__qcard--tech .jr__tick {
+    width: 20px;
+    height: 20px;
+    font-size: 11px;
+  }
+  .v2-jr .jr__qcard--tech:first-of-type {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  /* left: background-checked, employment; right: rating, guarantee */
+  .v2-jr .jr__qcard--tech:nth-of-type(1),
+  .v2-jr .jr__qcard--tech:nth-of-type(4) {
+    left: auto !important;
+    right: calc(100% + 6px);
+  }
+  .v2-jr .jr__qcard--tech:nth-of-type(2),
+  .v2-jr .jr__qcard--tech:nth-of-type(3) {
+    left: calc(100% + 6px) !important;
+  }
+  .v2-jr .jr__qcard--tech:nth-of-type(1),
+  .v2-jr .jr__qcard--tech:nth-of-type(3) {
+    top: 14% !important;
+  }
+  .v2-jr .jr__qcard--tech:nth-of-type(2),
+  .v2-jr .jr__qcard--tech:nth-of-type(4) {
+    top: 54% !important;
+  }
+}
+
+/* ---------- header on phones: the links fold into a menu button (nothing is dropped) ---------- */
+.header__menu {
+  display: none;
+}
+@media (max-width: 860px) {
+  .header--menu .header__bar {
+    position: relative;
+    gap: 10px;
+  }
+  .header--menu .header__logo {
+    margin-right: auto;
+  }
+  .header--menu .header__menu {
+    display: grid;
+    place-content: center;
+    gap: 5px;
+    width: 40px;
+    height: 36px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    color: inherit;
+    background: rgba(255, 255, 255, 0.45);
+    cursor: pointer;
+  }
+  .header--menu .header__menu i {
+    display: block;
+    width: 16px;
+    height: 1.6px;
+    border-radius: 2px;
+    background: currentColor;
+    transition: transform 0.3s;
+  }
+  .header--menu.is-open .header__menu i:first-child {
+    transform: translateY(3.3px) rotate(45deg);
+  }
+  .header--menu.is-open .header__menu i:last-child {
+    transform: translateY(-3.3px) rotate(-45deg);
+  }
+  .header--menu nav {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(100% + 8px);
+    display: grid;
+    gap: 2px;
+    padding: 10px;
+    border-radius: 22px;
+    font-size: 16px;
+    color: var(--red-dark);
+    background: rgba(253, 248, 238, 0.96);
+    box-shadow: 0 18px 40px -18px rgba(71, 21, 15, 0.4);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    transition: opacity 0.25s, transform 0.25s, visibility 0.25s;
+  }
+  .header--menu.is-open nav {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+  }
+  .header--menu nav a {
+    padding: 12px 14px;
+    border-radius: 14px;
+    opacity: 1;
+  }
+  .header--menu nav a:active {
+    background: rgba(71, 21, 15, 0.06);
+  }
+}
+
+/* ---------- phones: the copy of the later sections is shown in full ---------- */
+@media (max-width: 860px) {
+  .v2-site .ar__copy p {
+    display: block;
+    margin-top: 10px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .v2-site .sc__head p {
+    display: block;
+    margin: 8px auto 0;
+    max-width: 34ch;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .v2-site .dl__copy p {
+    display: block;
+    margin-top: 10px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .v2-site .dl__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    margin-top: 14px;
+    font-size: 12.5px;
+  }
+}
+
+/* narrow phones (≤ 380px): smaller tool tiles so they fit the strip beside the device */
+@media (max-width: 380px) {
+  .v2-jr .jr__tile img {
+    width: 42px;
+    height: 42px;
+  }
+  .v2-jr .jr__tile span {
+    max-width: 58px;
+    font-size: 10px;
+  }
+  /* Step 06's facts: tighter cards so every word fits the narrower strip */
+  .v2-jr .jr__qcard--tech {
+    padding: 8px 6px 9px;
+    font-size: 9.5px;
+  }
+  .v2-jr .jr__qcard--tech b {
+    font-size: 15px;
+  }
+  .v2-jr .jr__qcard--tech small {
+    font-size: 7px;
+    letter-spacing: 0.02em;
+  }
+}
+
+/* ---------- Download on phones: centred copy and store buttons; the phones fit below them ---------- */
+@media (max-width: 860px) {
+  .v2-site .dl__copy {
+    text-align: center;
+  }
+  .v2-site .dl__copy .eyebrow {
+    justify-content: center;
+  }
+  .v2-site .dl__copy p {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .v2-site .dl__copy h2 {
+    font-size: clamp(34px, 11vw, 48px);
+  }
+  .v2-site .dl__stores,
+  .v2-site .dl__meta {
+    justify-content: center;
+  }
+  .v2-site .dl__phones,
+  .v2-site .dl__halo {
+    top: var(--dl-cy, 72%);
+  }
+}
+
+/* narrow phones: the two store buttons stay side by side */
+@media (max-width: 380px) {
+  .v2-site .dl__stores {
+    gap: 8px;
+    flex-wrap: nowrap;
+  }
+  .v2-site .store {
+    gap: 8px;
+    padding: 9px 12px 9px 10px;
+  }
+  .v2-site .store svg {
+    width: 20px;
+    height: 20px;
+  }
+  .v2-site .store small {
+    font-size: 8.5px;
+  }
+  .v2-site .store b {
+    font-size: 14.5px;
+  }
+}
+
+/* Academy badges on phones: centred in GSAP (xPercent/yPercent), not with CSS translate */
+@media (max-width: 860px) {
+  .v2-ac__badge {
+    translate: none;
+  }
+}
+
+/* ---------- back to top: a dark-coffee pebble with the cream Ora star (it turns as you scroll) and a small
+   arrow that bobs above it; no outline, no glow; it squishes when touched and the arrow shoots up on tap ---------- */
+.totop {
+  position: fixed;
+  z-index: 70;
+  right: max(22px, env(safe-area-inset-right, 0px));
+  bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: var(--beige, #fdf4e2);
+  background: var(--red-dark, #47150f);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(18px) scale(0.6);
+  transition:
+    opacity 0.3s ease,
+    visibility 0.3s,
+    transform 0.55s cubic-bezier(0.34, 1.7, 0.5, 1); /* springy pop-in */
+}
+.totop.is-on {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+}
+.totop__star {
+  width: 20px;
+  height: 20px;
+  color: var(--yellow-light, #fcdda1);
+}
+.totop__arrow {
+  width: 16px;
+  height: 9px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  animation: totop-bob 1.8s ease-in-out infinite;
+}
+@keyframes totop-bob {
+  0%,
+  100% {
+    transform: translateY(1px);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+@media (hover: hover) {
+  .totop.is-on:hover {
+    transform: scale(1.1) rotate(-6deg);
+    background: #5a1d14;
+  }
+  .totop:hover .totop__arrow {
+    animation-duration: 0.9s;
+  }
+}
+.totop.is-on:active {
+  transform: scale(0.88);
+  transition-duration: 0.12s;
+}
+.totop.is-going .totop__arrow {
+  animation: totop-launch 0.45s cubic-bezier(0.5, 0, 0.75, 0) forwards;
+}
+@keyframes totop-launch {
+  to {
+    transform: translateY(-40px);
+    opacity: 0;
+  }
+}
+.totop:focus-visible {
+  outline: 2px solid var(--yellow-light, #fcdda1);
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .totop__arrow {
+    animation: none;
+  }
+}
+.totop-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 69;
+  background: var(--beige, #fdf4e2);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+@media (max-width: 860px) {
+  .totop {
+    width: 50px;
+    height: 50px;
+    right: max(16px, env(safe-area-inset-right, 0px));
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* V2: the header waits until you're through the clouds, then drops in */
+.header .header__bar {
+  transition: color 0.5s var(--ease-out), background 0.5s, opacity 0.5s var(--ease-out),
+    transform 0.6s cubic-bezier(0.34, 1.4, 0.5, 1);
+}
+.header.is-away .header__bar {
+  opacity: 0;
+  transform: translateY(-140%);
+  pointer-events: none;
+  transition-duration: 0.3s;
+}
+.header.is-away .header__bar * {
+  pointer-events: none;
 }

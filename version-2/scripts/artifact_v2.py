@@ -113,7 +113,7 @@ def main() -> None:
     os.makedirs(os.path.join(OUT, "v2/academy"))
     for f in sorted(os.listdir("public/v2/academy")):
         src, dst = os.path.join("public/v2/academy", f), os.path.join(OUT, "v2/academy", f)
-        if f in ("1.mp4", "2.mp4", "3.mp4", "5.mp4"):
+        if f in ("1.mp4", "2.mp4", "3.mp4", "4.mp4", "5.mp4"):
             # the supplied Academy films (scripts/v2_academy_videos.py): shipped exactly as supplied
             shutil.copy(src, dst)
         elif f.endswith(".mp4"):
