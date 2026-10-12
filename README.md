@@ -3,13 +3,16 @@
 Two design variants of the same scroll-driven story, each a complete, self-contained Next.js project.
 Pick one folder, run it, deploy it; the two never depend on each other.
 
+> **Current version: [`version-2/`](version-2).** Variant 2 is the one in active development and review.
+> `version-1/` is kept for reference only and is not being updated.
+
 | Folder | Variant | The story |
 | --- | --- | --- |
-| [`version-1/`](version-1) | **Variant 1** | The 3D Ora star → falling through clouds into a Dubai villa → a leak under the basin → he opens Ora on his phone → the booking flow in the real app UI → the technician accepts and rides over on his scooter |
-| [`version-2/`](version-2) | **Variant 2** | An everyday apartment community → in through an 8th-floor window to the same leak → the Ora splash zooms into the app → the booking steps under one title, "Your Service in a Few Steps" → your technician's photo opens out of the confirmation → he drives over in the Ora van → the Ora Academy |
+| [`version-1/`](version-1) | **Variant 1** (reference) | The 3D Ora star → falling through clouds into a Dubai villa → a leak under the basin → he opens Ora on his phone → the booking flow in the real app UI → the technician accepts and rides over on his scooter |
+| [`version-2/`](version-2) | **Variant 2** (current) | An everyday apartment community → in through an 8th-floor window to the same leak → the Ora splash zooms into the app → the booking steps under one title, "Your Service in a Few Steps" → your technician's photo opens out of the confirmation → he drives over in the Ora van → the Ora Academy |
 
 ```bash
-cd version-1        # or: cd version-2
+cd version-2        # the current version (version-1 runs the same way)
 npm install
 npm run dev         # http://localhost:3000
 npm run build && npm start
